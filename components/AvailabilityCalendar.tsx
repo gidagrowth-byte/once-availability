@@ -550,6 +550,8 @@ function createLineMessage(
   const requestLines = selectedSlots.map((slot, index) => `第${index + 1}希望：${slot.dateLabel}〜`);
 
   return [
+    "以下をそのままご送信ください！",
+    "",
     "体験予約希望です。",
     "",
     `店舗：${storeName}`,

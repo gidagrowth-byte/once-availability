@@ -16,6 +16,8 @@ const LINE_NAVIGATION_MODE: LineNavigationMode = "anchor";
 
 export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps) {
   const [selectedSlots, setSelectedSlots] = useState<AvailabilitySlot[]>([]);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [monthKey, setMonthKey] = useState(initialData.month.key);
   const [storeId, setStoreId] = useState(initialData.store.id);
   const { data, isLoading, error, lastUpdatedAt, availableCount, refreshAvailability } = useAvailability({
@@ -64,6 +66,8 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
       storeId: data.store.id,
       storeName: data.store.name,
       selectedSlots,
+      customerName: customerName.trim(),
+      customerPhone: customerPhone.trim(),
       generatedMessage,
       lineUrl: href,
       navigationMode: LINE_NAVIGATION_MODE,
@@ -107,7 +111,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   });
 
   return (
-    <section className={`px-4 pt-5 sm:px-0 ${selectedSlots.length > 0 ? "pb-64" : "pb-8"}`}>
+    <section className={`px-4 pt-5 sm:px-0 ${selectedSlots.length > 0 ? "pb-[25rem]" : "pb-8"}`}>
       <div className="mx-auto mb-5 max-w-4xl">
         <label className="block max-w-sm">
           <span className="mb-2 block text-sm font-bold text-slate-700">店舗</span>
@@ -389,8 +393,12 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
 
       <LineFixedBar
         selectedSlots={selectedSlots}
+        customerName={customerName}
+        customerPhone={customerPhone}
         lineOaId={data.store.lineOaId}
         storeName={data.store.name}
+        onCustomerNameChange={setCustomerName}
+        onCustomerPhoneChange={setCustomerPhone}
         onLineClick={handleLineClick}
       />
     </section>
@@ -441,22 +449,63 @@ function SlotCell({ slot, selectionNumber, onClick }: SlotCellProps) {
 
 type LineFixedBarProps = {
   selectedSlots: AvailabilitySlot[];
+  customerName: string;
+  customerPhone: string;
   lineOaId: string;
   storeName: string;
+  onCustomerNameChange: (value: string) => void;
+  onCustomerPhoneChange: (value: string) => void;
   onLineClick: (event: MouseEvent<HTMLAnchorElement>, generatedMessage: string, destinationUrl: string) => void;
 };
 
-function LineFixedBar({ selectedSlots, lineOaId, storeName, onLineClick }: LineFixedBarProps) {
+function LineFixedBar({
+  selectedSlots,
+  customerName,
+  customerPhone,
+  lineOaId,
+  storeName,
+  onCustomerNameChange,
+  onCustomerPhoneChange,
+  onLineClick,
+}: LineFixedBarProps) {
   if (selectedSlots.length === 0) {
     return null;
   }
 
-  const generatedMessage = createLineMessage(storeName, selectedSlots);
+  const trimmedCustomerName = customerName.trim();
+  const trimmedCustomerPhone = customerPhone.trim();
+  const canSubmit = selectedSlots.length > 0 && trimmedCustomerName.length > 0 && trimmedCustomerPhone.length > 0;
+  const generatedMessage = createLineMessage(storeName, selectedSlots, trimmedCustomerName, trimmedCustomerPhone);
   const destinationUrl = createLineUrl(lineOaId, generatedMessage);
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgba(24,33,47,0.14)] backdrop-blur">
-      <div className="mx-auto flex max-w-4xl flex-col gap-3 sm:items-center">
+    <div className="fixed inset-x-0 bottom-0 z-30 max-h-[78vh] overflow-y-auto border-t border-slate-200 bg-white/95 px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgba(24,33,47,0.14)] backdrop-blur">
+      <div className="mx-auto flex max-w-4xl flex-col gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold text-slate-500">お名前</span>
+            <input
+              type="text"
+              value={customerName}
+              onChange={(event) => onCustomerNameChange(event.target.value)}
+              className="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-base font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100"
+              autoComplete="name"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold text-slate-500">電話番号</span>
+            <input
+              type="tel"
+              value={customerPhone}
+              onChange={(event) => onCustomerPhoneChange(event.target.value.replace(/[^\d-]/g, ""))}
+              className="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-base font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100"
+              inputMode="tel"
+              pattern="[0-9-]*"
+              autoComplete="tel"
+            />
+          </label>
+        </div>
+
         <div className="w-full text-left">
           <p className="text-xs font-bold text-slate-500">選択中の希望日時</p>
           <ol className="mt-1 space-y-1 text-sm font-bold leading-6 text-ink sm:text-base">
@@ -472,8 +521,18 @@ function LineFixedBar({ selectedSlots, lineOaId, storeName, onLineClick }: LineF
           href={destinationUrl || "#"}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={(event) => onLineClick(event, generatedMessage, destinationUrl)}
-          className="flex min-h-14 w-full items-center justify-center rounded-md bg-line px-5 py-4 text-center text-base font-bold text-white transition active:scale-[0.99] sm:max-w-md"
+          aria-disabled={!canSubmit}
+          onClick={(event) => {
+            if (!canSubmit) {
+              event.preventDefault();
+              return;
+            }
+
+            onLineClick(event, generatedMessage, destinationUrl);
+          }}
+          className={`flex min-h-14 w-full items-center justify-center rounded-md px-5 py-4 text-center text-base font-bold text-white transition active:scale-[0.99] ${
+            canSubmit ? "bg-line" : "pointer-events-none bg-slate-300 opacity-70"
+          }`}
         >
           LINEで希望日時を送信する
         </a>
@@ -482,7 +541,12 @@ function LineFixedBar({ selectedSlots, lineOaId, storeName, onLineClick }: LineF
   );
 }
 
-function createLineMessage(storeName: string, selectedSlots: AvailabilitySlot[]) {
+function createLineMessage(
+  storeName: string,
+  selectedSlots: AvailabilitySlot[],
+  customerName: string,
+  customerPhone: string,
+) {
   const requestLines = selectedSlots.map((slot, index) => `第${index + 1}希望：${slot.dateLabel}〜`);
 
   return [
@@ -490,10 +554,10 @@ function createLineMessage(storeName: string, selectedSlots: AvailabilitySlot[])
     "",
     `店舗：${storeName}`,
     "",
-    ...requestLines,
+    `お名前：${customerName}`,
+    `電話番号：${customerPhone}`,
     "",
-    "お名前：",
-    "電話番号：",
+    ...requestLines,
     "",
     "※空き状況は変動するため、スタッフからの返信をもって予約確定となります。",
   ].join("\n");

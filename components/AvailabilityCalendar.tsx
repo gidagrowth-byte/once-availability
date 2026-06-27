@@ -157,7 +157,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   }, [data.days, selectedDate]);
 
   return (
-    <section className={`px-4 pt-5 sm:px-0 ${selectedSlots.length > 0 ? "pb-[25rem]" : "pb-8"}`}>
+    <section className={`px-4 pt-5 sm:px-0 ${selectedSlots.length > 0 ? "pb-[25rem]" : "pb-28"}`}>
       <div className="mx-auto mb-5 max-w-4xl">
         <label className="block max-w-sm">
           <span className="mb-2 block text-sm font-bold text-slate-700">店舗</span>
@@ -679,54 +679,62 @@ function LineFixedBar({
   onCustomerPhoneChange,
   onLineClick,
 }: LineFixedBarProps) {
-  if (selectedSlots.length === 0) {
-    return null;
-  }
-
   const trimmedCustomerName = customerName.trim();
   const trimmedCustomerPhone = customerPhone.trim();
-  const canSubmit = selectedSlots.length > 0 && trimmedCustomerName.length > 0 && trimmedCustomerPhone.length > 0;
+  const selectedCount = selectedSlots.length;
+  const canSubmit = selectedCount > 0;
+  const ctaLabel = getLineCtaLabel(selectedCount);
+  const ctaSubText = getLineCtaSubText(selectedCount);
   const generatedMessage = createLineMessage(storeName, selectedSlots, trimmedCustomerName, trimmedCustomerPhone);
   const destinationUrl = createLineUrl(lineOaId, generatedMessage);
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 max-h-[78vh] overflow-y-auto border-t border-slate-200 bg-white/95 px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgba(24,33,47,0.14)] backdrop-blur">
       <div className="mx-auto flex max-w-4xl flex-col gap-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block">
-            <span className="mb-1 block text-xs font-bold text-slate-500">お名前</span>
-            <input
-              type="text"
-              value={customerName}
-              onChange={(event) => onCustomerNameChange(event.target.value)}
-              className="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-base font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100"
-              autoComplete="name"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-bold text-slate-500">電話番号</span>
-            <input
-              type="tel"
-              value={customerPhone}
-              onChange={(event) => onCustomerPhoneChange(event.target.value.replace(/[^\d-]/g, ""))}
-              className="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-base font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100"
-              inputMode="tel"
-              pattern="[0-9-]*"
-              autoComplete="tel"
-            />
-          </label>
-        </div>
+        {selectedCount > 0 ? (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold text-slate-500">お名前</span>
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(event) => onCustomerNameChange(event.target.value)}
+                  className="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-base font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100"
+                  autoComplete="name"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold text-slate-500">電話番号</span>
+                <input
+                  type="tel"
+                  value={customerPhone}
+                  onChange={(event) => onCustomerPhoneChange(event.target.value.replace(/[^\d-]/g, ""))}
+                  className="h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-base font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100"
+                  inputMode="tel"
+                  pattern="[0-9-]*"
+                  autoComplete="tel"
+                />
+              </label>
+            </div>
 
-        <div className="w-full text-left">
-          <p className="text-xs font-bold text-slate-500">選択中の希望日時</p>
-          <ol className="mt-1 space-y-1 text-sm font-bold leading-6 text-ink sm:text-base">
-            {selectedSlots.map((slot, index) => (
-              <li key={slot.id}>
-                第{index + 1}希望：{slot.dateLabel}〜
-              </li>
-            ))}
-          </ol>
-        </div>
+            <div className="w-full text-left">
+              <p className="text-xs font-bold text-slate-500">選択中の希望日時</p>
+              <ol className="mt-1 space-y-1 text-sm font-bold leading-6 text-ink sm:text-base">
+                {selectedSlots.map((slot, index) => (
+                  <li key={slot.id}>
+                    第{index + 1}希望：{slot.dateLabel}〜
+                  </li>
+                ))}
+              </ol>
+              {selectedCount === 1 ? (
+                <p className="mt-1 text-xs font-semibold text-slate-500">
+                  （第2・第3希望も追加できます）
+                </p>
+              ) : null}
+            </div>
+          </>
+        ) : null}
 
         <a
           href={destinationUrl || "#"}
@@ -741,11 +749,14 @@ function LineFixedBar({
 
             onLineClick(event, generatedMessage, destinationUrl);
           }}
-          className={`flex min-h-14 w-full items-center justify-center rounded-md px-5 py-4 text-center text-base font-bold text-white transition active:scale-[0.99] ${
+          className={`flex min-h-14 w-full flex-col items-center justify-center rounded-md px-5 py-4 text-center text-base font-bold text-white transition active:scale-[0.99] ${
             canSubmit ? "bg-line" : "pointer-events-none bg-slate-300 opacity-70"
           }`}
         >
-          LINEで希望日時を送信する
+          <span>{ctaLabel}</span>
+          {ctaSubText ? (
+            <span className="mt-0.5 text-xs font-bold text-white/90">{ctaSubText}</span>
+          ) : null}
         </a>
       </div>
     </div>
@@ -774,6 +785,30 @@ function createLineMessage(
     "",
     "※空き状況は変動するため、スタッフからの返信をもって予約確定となります。",
   ].join("\n");
+}
+
+function getLineCtaLabel(selectedCount: number) {
+  if (selectedCount === 0) {
+    return "希望日時を選択してください";
+  }
+
+  if (selectedCount === 1) {
+    return "この日時でLINE送信する";
+  }
+
+  return `${selectedCount}候補をLINE送信する`;
+}
+
+function getLineCtaSubText(selectedCount: number) {
+  if (selectedCount === 1) {
+    return "（別候補も追加できます）";
+  }
+
+  if (selectedCount === 2) {
+    return "（あと1つ追加できます）";
+  }
+
+  return "";
 }
 
 function createLineUrl(lineOaId: string, message: string) {

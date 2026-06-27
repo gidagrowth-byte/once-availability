@@ -35,11 +35,8 @@ export type MonthWindow = {
 };
 
 export function createMonthWindow(monthKey?: string | null): MonthWindow {
-  const currentMonth = getTokyoMonthOffset(0);
-  const nextMonth = getTokyoMonthOffset(1);
   const parsedMonth = parseMonthKey(monthKey);
-  const requestedMonth = parsedMonth ?? currentMonth;
-  const normalizedMonth = clampMonthToVisibleRange(requestedMonth, currentMonth, nextMonth);
+  const normalizedMonth = parsedMonth ?? getTokyoMonthOffset(0);
   const year = normalizedMonth.year;
   const monthIndex = normalizedMonth.monthIndex;
   const start = new Date(year, monthIndex, 1);
@@ -176,29 +173,6 @@ function getTokyoDateParts(date: Date) {
     month: partValue("month"),
     day: partValue("day"),
   };
-}
-
-function clampMonthToVisibleRange(
-  requestedMonth: { year: number; monthIndex: number },
-  currentMonth: { year: number; monthIndex: number },
-  nextMonth: { year: number; monthIndex: number },
-) {
-  if (compareMonth(requestedMonth, currentMonth) < 0) {
-    return currentMonth;
-  }
-
-  if (compareMonth(requestedMonth, nextMonth) > 0) {
-    return nextMonth;
-  }
-
-  return requestedMonth;
-}
-
-function compareMonth(
-  left: { year: number; monthIndex: number },
-  right: { year: number; monthIndex: number },
-) {
-  return left.year * 12 + left.monthIndex - (right.year * 12 + right.monthIndex);
 }
 
 function parseMonthKey(monthKey?: string | null) {

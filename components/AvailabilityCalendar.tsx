@@ -104,11 +104,27 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   const julyElevenBusySlots = data.diagnostics.busySlots.filter((slot) => {
     return slot.dateLabel.startsWith("7/11");
   });
-  const currentMonthKey = getClientMonthKey(0);
-  const nextMonthKey = getClientMonthKey(1);
-  const canShowPreviousMonth = monthKey !== currentMonthKey;
-  const canShowNextMonth = monthKey !== nextMonthKey;
+  const availableMonths = data.availableMonths;
+  const activeMonthKey = data.month.key;
+  const activeMonthIndex = availableMonths.indexOf(activeMonthKey);
+  const previousAvailableMonthKey = activeMonthIndex > 0 ? availableMonths[activeMonthIndex - 1] : null;
+  const nextAvailableMonthKey =
+    activeMonthIndex >= 0 && activeMonthIndex < availableMonths.length - 1 ? availableMonths[activeMonthIndex + 1] : null;
   const selectedDay = data.days.find((day) => day.date === selectedDate) ?? data.days[0];
+
+  function handleMonthChange(nextMonthKey: string | null) {
+    if (!nextMonthKey) {
+      return;
+    }
+
+    setMonthKey(nextMonthKey);
+  }
+
+  useEffect(() => {
+    if (data.month.key !== monthKey) {
+      setMonthKey(data.month.key);
+    }
+  }, [data.month.key, monthKey]);
 
   useEffect(() => {
     if (!data.days.some((day) => day.date === selectedDate)) {
@@ -147,22 +163,22 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
       <div className="mx-auto mb-4 flex max-w-4xl items-center justify-center gap-3 md:gap-4">
         <button
           type="button"
-          onClick={() => setMonthKey((current) => clampClientMonthKey(addMonths(current, -1)))}
+          onClick={() => handleMonthChange(previousAvailableMonthKey)}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-base font-bold text-slate-700 shadow-sm transition active:scale-95 disabled:opacity-60 md:h-10 md:w-10 md:text-xl"
-          disabled={isLoading || !canShowPreviousMonth}
+          disabled={isLoading || !previousAvailableMonthKey}
           aria-label="前月を表示"
           title="前月を表示"
         >
           ＜
         </button>
         <p className="min-w-[9em] text-center text-xl font-bold text-ink" aria-live="polite">
-          {formatMonthLabel(monthKey)}
+          {formatMonthLabel(activeMonthKey)}
         </p>
         <button
           type="button"
-          onClick={() => setMonthKey((current) => clampClientMonthKey(addMonths(current, 1)))}
+          onClick={() => handleMonthChange(nextAvailableMonthKey)}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-base font-bold text-slate-700 shadow-sm transition active:scale-95 disabled:opacity-60 md:h-10 md:w-10 md:text-xl"
-          disabled={isLoading || !canShowNextMonth}
+          disabled={isLoading || !nextAvailableMonthKey}
           aria-label="翌月を表示"
           title="翌月を表示"
         >
@@ -171,17 +187,17 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
       </div>
 
       <div className="mx-auto mb-4 flex max-w-4xl items-start justify-between gap-3">
-        <div className="min-w-0 flex-1 text-center">
+        <div className="min-w-0 flex-1">
           <h2 className="text-lg font-bold text-ink">空き状況</h2>
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm">
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
             <span className="font-bold text-leaf">○ 空きあり</span>
             <span className="font-bold text-slate-500">× 満席</span>
           </div>
           <div className="mt-4 md:mt-3">
-            <p className="text-[15px] font-bold leading-6 text-ink md:text-sm">
+            <p className="text-[15px] font-semibold leading-6 text-ink md:text-sm">
               希望の日時を3つまでご選択ください
             </p>
-            <p className="mt-0.5 text-xs font-semibold leading-5 text-slate-500">
+            <p className="mt-0.5 text-sm leading-5 text-gray-500">
               （第1〜第3希望）
             </p>
           </div>
@@ -721,39 +737,6 @@ function weekdayTextClass(weekday: string) {
   }
 
   return "text-ink";
-}
-
-function addMonths(monthKey: string, amount: number) {
-  const { year, monthIndex } = parseMonthKey(monthKey);
-  const date = new Date(year, monthIndex + amount, 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function clampClientMonthKey(monthKey: string) {
-  const currentMonthKey = getClientMonthKey(0);
-  const nextMonthKey = getClientMonthKey(1);
-
-  if (compareMonthKey(monthKey, currentMonthKey) < 0) {
-    return currentMonthKey;
-  }
-
-  if (compareMonthKey(monthKey, nextMonthKey) > 0) {
-    return nextMonthKey;
-  }
-
-  return monthKey;
-}
-
-function getClientMonthKey(offset: number) {
-  const today = new Date();
-  const date = new Date(today.getFullYear(), today.getMonth() + offset, 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function compareMonthKey(leftMonthKey: string, rightMonthKey: string) {
-  const left = parseMonthKey(leftMonthKey);
-  const right = parseMonthKey(rightMonthKey);
-  return left.year * 12 + left.monthIndex - (right.year * 12 + right.monthIndex);
 }
 
 function formatMonthLabel(monthKey: string) {

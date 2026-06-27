@@ -27,9 +27,11 @@ export type ShiftRow = {
 
 export type ShiftLookup = {
   rows: ShiftRow[];
+  availableMonthKeys: string[];
   sheetSource: "google-sheets" | "dummy-fallback";
   fetchedAt: string;
   errorMessage: string | null;
+  hasMonthData: (monthKey: string) => boolean;
   hasShift: (dateKey: string, time: string) => boolean;
 };
 
@@ -155,6 +157,8 @@ function createShiftLookup(
   errorMessage: string | null,
 ): ShiftLookup {
   const shiftMap = new Map<string, string>();
+  const availableMonthKeys = new Set<string>();
+  const tomorrowDateKey = getTokyoTomorrowDateKey();
 
   for (const row of rows) {
     const dateKey = toDateKeyFromSheetDate(row.日付);
@@ -163,16 +167,24 @@ function createShiftLookup(
       continue;
     }
 
+    if (dateKey >= tomorrowDateKey) {
+      availableMonthKeys.add(dateKey.slice(0, 7));
+    }
+
     for (const { time, column } of shiftTimeColumns) {
       shiftMap.set(createShiftKey(store.id, dateKey, time), row[column].trim());
     }
   }
 
+  const sortedAvailableMonthKeys = Array.from(availableMonthKeys).sort();
+
   return {
     rows,
+    availableMonthKeys: sortedAvailableMonthKeys,
     sheetSource,
     fetchedAt,
     errorMessage,
+    hasMonthData: (monthKey) => sortedAvailableMonthKeys.includes(monthKey),
     hasShift: (dateKey, time) => {
       const cellValue = shiftMap.get(createShiftKey(store.id, dateKey, time)) ?? "";
       return cellValue.trim() !== "";
@@ -252,6 +264,36 @@ function toDateKeyFromSheetDate(sheetDate: string) {
 
   const [, year, month, day] = match;
   return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+}
+
+function getTokyoTomorrowDateKey() {
+  const todayParts = getTokyoDateParts(new Date());
+  const tomorrow = new Date(todayParts.year, todayParts.month - 1, todayParts.day);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return toDateKey(tomorrow);
+}
+
+function getTokyoDateParts(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const partValue = (type: string) => Number(parts.find((part) => part.type === type)?.value);
+
+  return {
+    year: partValue("year"),
+    month: partValue("month"),
+    day: partValue("day"),
+  };
+}
+
+function toDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function extractSpreadsheetId(value?: string) {

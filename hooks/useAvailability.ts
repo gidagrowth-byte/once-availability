@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AvailabilityResponse, AvailabilitySlot } from "@/types/availability";
 
 type UseAvailabilityOptions = {
@@ -32,13 +32,6 @@ export function useAvailability({
   useEffect(() => {
     selectedSlotsRef.current = selectedSlots;
   }, [selectedSlots]);
-
-  const availableCount = useMemo(() => {
-    return data.days.reduce(
-      (count, day) => count + day.slots.filter((slot) => slot.status === "available").length,
-      0,
-    );
-  }, [data.days]);
 
   const refreshAvailability = useCallback(async (options: RefreshAvailabilityOptions = {}) => {
     if (isRefreshingRef.current) {
@@ -104,7 +97,6 @@ export function useAvailability({
     isLoading,
     error,
     lastUpdatedAt,
-    availableCount,
     refreshAvailability,
   };
 }

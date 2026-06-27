@@ -7,9 +7,11 @@ import type { AvailabilityResponse } from "@/types/availability";
 
 export async function getAvailability(monthKey?: string | null, storeId?: string | null): Promise<AvailabilityResponse> {
   const store = getStoreById(storeId);
-  const monthWindow = createMonthWindow(monthKey);
+  const requestedMonthWindow = createMonthWindow(monthKey);
+  const shiftLookup = await fetchShiftLookup(requestedMonthWindow, store);
+  const resolvedMonthKey = resolveAvailableMonthKey(requestedMonthWindow.monthKey, shiftLookup.availableMonthKeys);
+  const monthWindow = createMonthWindow(resolvedMonthKey);
   const initialWindow = getFreeBusyWindow(monthWindow);
-  const shiftLookup = await fetchShiftLookup(monthWindow, store);
   let source: AvailabilityResponse["source"] = "google-calendar";
   let busyRanges: BusyRange[] = [];
   let canUseCalendar = false;
@@ -58,7 +60,9 @@ export async function getAvailability(monthKey?: string | null, storeId?: string
     errorMessage = error instanceof Error ? error.message : "Unknown Google Calendar read error";
   }
 
-  const days = createAvailabilityDays(busyRanges, monthWindow, { canUseCalendar, shiftLookup });
+  const days = shiftLookup.hasMonthData(monthWindow.monthKey)
+    ? createAvailabilityDays(busyRanges, monthWindow, { canUseCalendar, shiftLookup })
+    : [];
   const busySlots = collectCalendarBusySlots(days, busyRanges);
 
   return {
@@ -76,6 +80,7 @@ export async function getAvailability(monthKey?: string | null, storeId?: string
       key: monthWindow.monthKey,
       label: monthWindow.label,
     },
+    availableMonths: shiftLookup.availableMonthKeys,
     days,
     source,
     calendarId: env.googleCalendarId ?? null,
@@ -115,6 +120,16 @@ export async function getAvailability(monthKey?: string | null, storeId?: string
       },
     },
   };
+}
+
+function resolveAvailableMonthKey(requestedMonthKey: string, availableMonthKeys: string[]) {
+  if (availableMonthKeys.includes(requestedMonthKey)) {
+    return requestedMonthKey;
+  }
+
+  return availableMonthKeys.find((availableMonthKey) => availableMonthKey >= requestedMonthKey)
+    ?? availableMonthKeys[0]
+    ?? requestedMonthKey;
 }
 
 function collectCalendarBusySlots(

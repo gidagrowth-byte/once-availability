@@ -31,6 +31,7 @@ export type AvailabilityResponse = {
     key: string;
     label: string;
   };
+  availableMonths: string[];
   days: AvailabilityDay[];
   source: "google-calendar";
   calendarId: string | null;

@@ -798,6 +798,11 @@ function LineConfirmModal({
                 </li>
               ))}
             </ol>
+            {getConfirmationSelectionGuide(selectedSlots.length) ? (
+              <p className="mt-2 text-xs font-semibold text-slate-500">
+                {getConfirmationSelectionGuide(selectedSlots.length)}
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -970,6 +975,18 @@ function getLineCtaSubText(selectedCount: number) {
 
   if (selectedCount === 2) {
     return "（あと1つ追加できます）";
+  }
+
+  return "";
+}
+
+function getConfirmationSelectionGuide(selectedCount: number) {
+  if (selectedCount === 1) {
+    return "あと2件まで追加できます（任意）";
+  }
+
+  if (selectedCount === 2) {
+    return "あと1件追加できます（任意）";
   }
 
   return "";

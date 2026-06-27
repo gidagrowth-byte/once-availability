@@ -3,9 +3,21 @@
 declare global {
   interface Window {
     dataLayer?: Record<string, unknown>[];
-    clarity?: (method: "set", key: string, value: string) => void;
+    clarity?: ((method: "set", key: string, value: string) => void) &
+      ((method: "event", eventName: string) => void);
   }
 }
+
+type ClarityEvent = {
+  eventName: string;
+  params: Record<string, unknown>;
+};
+
+const clarityQueue: ClarityEvent[] = [];
+const clarityFlushIntervalMs = 500;
+const clarityMaxWaitMs = 10_000;
+let clarityFlushIntervalId: number | null = null;
+let clarityFlushStartedAt = 0;
 
 export function trackEvent(eventName: string, params: Record<string, unknown>) {
   if (typeof window === "undefined") {
@@ -21,25 +33,91 @@ export function trackEvent(eventName: string, params: Record<string, unknown>) {
     ...params,
   });
 
-  setClarityTags(eventName, params);
+  queueOrSendClarityEvent(eventName, params);
 }
 
-function setClarityTags(eventName: string, params: Record<string, unknown>) {
-  if (typeof window.clarity !== "function") {
+function queueOrSendClarityEvent(eventName: string, params: Record<string, unknown>) {
+  if (isClarityReady()) {
+    sendClarityEvent({ eventName, params });
     return;
   }
+
+  clarityQueue.push({ eventName, params });
+  console.log("clarity event queued", { eventName, queueSize: clarityQueue.length });
+  startClarityFlushInterval();
+}
+
+function startClarityFlushInterval() {
+  if (clarityFlushIntervalId !== null) {
+    return;
+  }
+
+  clarityFlushStartedAt = Date.now();
+  clarityFlushIntervalId = window.setInterval(() => {
+    if (isClarityReady()) {
+      flushClarityQueue();
+      stopClarityFlushInterval();
+      return;
+    }
+
+    if (Date.now() - clarityFlushStartedAt >= clarityMaxWaitMs) {
+      console.log("clarity event queue expired", { queueSize: clarityQueue.length });
+      clarityQueue.length = 0;
+      stopClarityFlushInterval();
+    }
+  }, clarityFlushIntervalMs);
+}
+
+function stopClarityFlushInterval() {
+  if (clarityFlushIntervalId === null) {
+    return;
+  }
+
+  window.clearInterval(clarityFlushIntervalId);
+  clarityFlushIntervalId = null;
+}
+
+function flushClarityQueue() {
+  const queuedEvents = clarityQueue.splice(0, clarityQueue.length);
+
+  for (const clarityEvent of queuedEvents) {
+    sendClarityEvent(clarityEvent);
+  }
+
+  console.log("clarity event queue flushed", { flushedCount: queuedEvents.length });
+}
+
+function sendClarityEvent({ eventName, params }: ClarityEvent) {
+  if (!isClarityReady()) {
+    return;
+  }
+
+  const clarity = window.clarity;
+
+  if (typeof clarity !== "function") {
+    return;
+  }
+
+  clarity("event", eventName);
 
   const tags = getClarityTags(eventName, params);
 
   for (const [key, value] of Object.entries(tags)) {
-    window.clarity("set", key, String(value));
+    clarity("set", key, String(value));
   }
+
+  console.log("clarity event sent", { eventName, tags });
+}
+
+function isClarityReady() {
+  return typeof window !== "undefined" && typeof window.clarity === "function";
 }
 
 function getClarityTags(eventName: string, params: Record<string, unknown>) {
   if (eventName === "availability_view") {
     return pickDefined({
       event: eventName,
+      last_event: eventName,
       store_id: params.store_id,
     });
   }
@@ -47,6 +125,7 @@ function getClarityTags(eventName: string, params: Record<string, unknown>) {
   if (eventName === "store_change") {
     return pickDefined({
       event: eventName,
+      last_event: eventName,
       store_id: params.store_id,
     });
   }
@@ -54,6 +133,7 @@ function getClarityTags(eventName: string, params: Record<string, unknown>) {
   if (eventName === "slot_select") {
     return pickDefined({
       event: eventName,
+      last_event: eventName,
       store_id: params.store_id,
       selected_date: params.date,
       selected_time: params.time,
@@ -63,6 +143,7 @@ function getClarityTags(eventName: string, params: Record<string, unknown>) {
   if (eventName === "line_send_click") {
     return pickDefined({
       event: eventName,
+      last_event: eventName,
       store_id: params.store_id,
       selected_slots: params.selected_slots,
     });

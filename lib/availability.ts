@@ -1,6 +1,6 @@
 import { fetchGoogleCalendarBusyRanges } from "@/lib/googleCalendar";
 import { env } from "@/lib/config";
-import { fetchShiftLookup } from "@/lib/shiftSchedule";
+import { fetchShiftLookup, getShiftSheetName } from "@/lib/shiftSchedule";
 import { createAvailabilityDays, createMonthWindow, getFreeBusyWindow, type BusyRange } from "@/lib/slots";
 import { getStoreById } from "@/lib/stores";
 import type { AvailabilityResponse } from "@/types/availability";
@@ -105,7 +105,7 @@ export async function getAvailability(
       selectedMonth,
       timeMin,
       timeMax,
-      shiftSheetName: store.id,
+      shiftSheetName: getShiftSheetName(store),
       sheetSource: shiftLookup.sheetSource,
       shiftErrorMessage: shiftLookup.errorMessage,
       shiftRows: shiftLookup.rows,

@@ -84,7 +84,7 @@ async function fetchGoogleSheetsShiftRows(store: Store) {
     dateTimeRenderOption: "FORMATTED_STRING",
     majorDimension: "ROWS",
   });
-  const range = `${quoteSheetName(store.id)}!A:L`;
+  const range = `${quoteSheetName(getShiftSheetName(store))}!A:L`;
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?${params.toString()}`;
 
   const response = await fetch(url, {
@@ -320,4 +320,8 @@ function extractSpreadsheetId(value?: string) {
 
 function quoteSheetName(sheetName: string) {
   return `'${sheetName.replace(/'/g, "''")}'`;
+}
+
+export function getShiftSheetName(store: Store) {
+  return store.shiftSheetName ?? store.id;
 }

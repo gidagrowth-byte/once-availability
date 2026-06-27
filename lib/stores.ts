@@ -5,6 +5,7 @@ export type Store = {
   name: string;
   type: StoreType;
   keywords: readonly string[];
+  shiftSheetName?: string;
   lineUrl: string;
   lineOaId: string;
   area: string;
@@ -31,6 +32,7 @@ export const stores = [
     name: "千歳烏山店",
     type: "direct",
     keywords: ["千歳烏山店"],
+    shiftSheetName: "chitosekarasuyama",
     lineUrl: "",
     lineOaId: "@362yvuor",
     area: "世田谷区・千歳烏山",
@@ -64,6 +66,7 @@ export const stores = [
     name: "清澄白河店",
     type: "fc",
     keywords: ["清澄白河店"],
+    shiftSheetName: "kiyosumishirakawa",
     lineUrl: "",
     lineOaId: "@080fklpc",
     area: "江東区・清澄白河",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { useAvailability } from "@/hooks/useAvailability";
 import { trackEvent } from "@/lib/analytics";
 import { stores } from "@/lib/stores";
@@ -18,6 +18,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   const [selectedSlots, setSelectedSlots] = useState<AvailabilitySlot[]>([]);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [selectedDate, setSelectedDate] = useState(initialData.days[0]?.date ?? "");
   const [monthKey, setMonthKey] = useState(initialData.month.key);
   const [storeId, setStoreId] = useState(initialData.store.id);
   const { data, isLoading, error, lastUpdatedAt, availableCount, refreshAvailability } = useAvailability({
@@ -107,6 +108,13 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   const nextMonthKey = getClientMonthKey(1);
   const canShowPreviousMonth = monthKey !== currentMonthKey;
   const canShowNextMonth = monthKey !== nextMonthKey;
+  const selectedDay = data.days.find((day) => day.date === selectedDate) ?? data.days[0];
+
+  useEffect(() => {
+    if (!data.days.some((day) => day.date === selectedDate)) {
+      setSelectedDate(data.days[0]?.date ?? "");
+    }
+  }, [data.days, selectedDate]);
 
   return (
     <section className={`px-4 pt-5 sm:px-0 ${selectedSlots.length > 0 ? "pb-[25rem]" : "pb-8"}`}>
@@ -127,20 +135,20 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
             ))}
           </select>
         </label>
-        <p className="text-sm font-semibold text-leaf">{data.store.area}</p>
-        <h1 className="mt-2 text-2xl font-bold tracking-normal text-ink">
+        <p className="mt-2 truncate text-xs font-semibold text-leaf md:text-sm">{data.store.area}</p>
+        <h1 className="mt-2 hidden text-2xl font-bold tracking-normal text-ink md:block">
           {data.store.name}
         </h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
+        <p className="mt-2 hidden text-sm leading-6 text-slate-600 md:block">
           ○の枠を選ぶと、希望日時をLINEで送信できます。予約は店舗からの返信後に確定します。
         </p>
       </div>
 
-      <div className="mx-auto mb-4 flex max-w-4xl items-center justify-center gap-4">
+      <div className="mx-auto mb-4 flex max-w-4xl items-center justify-center gap-3 md:gap-4">
         <button
           type="button"
           onClick={() => setMonthKey((current) => clampClientMonthKey(addMonths(current, -1)))}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-xl font-bold text-slate-700 shadow-sm transition active:scale-95 disabled:opacity-60"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-base font-bold text-slate-700 shadow-sm transition active:scale-95 disabled:opacity-60 md:h-10 md:w-10 md:text-xl"
           disabled={isLoading || !canShowPreviousMonth}
           aria-label="前月を表示"
           title="前月を表示"
@@ -153,7 +161,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
         <button
           type="button"
           onClick={() => setMonthKey((current) => clampClientMonthKey(addMonths(current, 1)))}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-xl font-bold text-slate-700 shadow-sm transition active:scale-95 disabled:opacity-60"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-base font-bold text-slate-700 shadow-sm transition active:scale-95 disabled:opacity-60 md:h-10 md:w-10 md:text-xl"
           disabled={isLoading || !canShowNextMonth}
           aria-label="翌月を表示"
           title="翌月を表示"
@@ -173,7 +181,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
           <p className="mt-1 text-xs text-slate-500">
             {availableCount > 0 ? `${availableCount}件の候補があります` : "現在表示できる空き枠がありません"}
           </p>
-          <p className="mt-2 text-xs font-semibold text-slate-500">
+          <p className="mt-2 hidden text-xs font-semibold text-slate-500 md:block">
             横にスライドすると、他の日付も確認できます。
           </p>
         </div>
@@ -202,7 +210,16 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
         </p>
       ) : null}
 
-      <div className="mx-auto max-w-4xl overflow-x-auto rounded-md border border-slate-200 bg-white shadow-soft [scrollbar-gutter:stable]">
+      <MobileAvailabilityView
+        days={data.days}
+        selectedDate={selectedDate}
+        selectedDay={selectedDay}
+        selectedSlots={selectedSlots}
+        onSelectedDateChange={setSelectedDate}
+        onSlotClick={handleSlotClick}
+      />
+
+      <div className="mx-auto hidden max-w-4xl overflow-x-auto rounded-md border border-slate-200 bg-white shadow-soft [scrollbar-gutter:stable] md:block">
         <table className="min-w-[650px] border-collapse text-center sm:min-w-full">
           <thead>
             <tr>
@@ -263,7 +280,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
         シフトとGoogleカレンダーの予定をもとに自動判定しています。過去日は表示されません。
       </p>
 
-      <div className="mx-auto mt-3 max-w-4xl rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-xs leading-5 text-slate-600">
+      <div className="mx-auto mt-3 hidden max-w-4xl rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-xs leading-5 text-slate-600 md:block">
         <p className="font-bold text-slate-700">デバッグ</p>
         <p className="mt-1">表示中 selectedMonth: {monthKey}</p>
         <p>API selectedMonth: {data.diagnostics.selectedMonth}</p>
@@ -404,6 +421,105 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
 }
 
 const timeRows = ["09:30", "10:40", "11:50", "13:00", "14:10", "15:20", "16:30", "17:40", "18:50", "20:00"];
+
+type MobileAvailabilityViewProps = {
+  days: AvailabilityResponse["days"];
+  selectedDate: string;
+  selectedDay: AvailabilityResponse["days"][number] | undefined;
+  selectedSlots: AvailabilitySlot[];
+  onSelectedDateChange: (date: string) => void;
+  onSlotClick: (slot: AvailabilitySlot) => void;
+};
+
+function MobileAvailabilityView({
+  days,
+  selectedDate,
+  selectedDay,
+  selectedSlots,
+  onSelectedDateChange,
+  onSlotClick,
+}: MobileAvailabilityViewProps) {
+  if (days.length === 0 || !selectedDay) {
+    return (
+      <div className="mx-auto max-w-4xl rounded-md border border-slate-200 bg-white px-4 py-8 text-center text-sm font-bold text-slate-500 md:hidden">
+        表示できる日付がありません。
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-4xl md:hidden">
+      <div className="-mx-4 mb-3 overflow-x-auto px-4 [scrollbar-width:none]">
+        <div className="flex w-max gap-2">
+          {days.map((day) => {
+            const isSelected = day.date === selectedDate;
+
+            return (
+              <button
+                key={day.date}
+                type="button"
+                onClick={() => onSelectedDateChange(day.date)}
+                className={`h-10 min-w-[86px] rounded-md border px-3 text-sm font-bold transition active:scale-[0.98] ${
+                  isSelected
+                    ? "border-leaf bg-leaf text-white"
+                    : "border-slate-200 bg-white text-slate-700"
+                }`}
+              >
+                {day.label}({day.weekday})
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="rounded-md border border-slate-200 bg-white shadow-soft">
+        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+          <p className={`text-base font-bold ${weekdayTextClass(selectedDay.weekday)}`}>
+            {selectedDay.label}({selectedDay.weekday})
+          </p>
+        </div>
+        <div className="divide-y divide-slate-100">
+          {timeRows.map((time) => {
+            const slot = selectedDay.slots.find((item) => item.label === time);
+            const selectionNumber = slot ? getSelectionNumber(selectedSlots, slot.id) : null;
+
+            if (!slot || slot.status !== "available") {
+              return (
+                <div key={time} className="flex min-h-14 items-center justify-between bg-slate-50 px-4 py-3">
+                  <span className="text-base font-bold text-slate-500">{time}</span>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-lg font-bold text-slate-400">
+                    ×
+                  </span>
+                </div>
+              );
+            }
+
+            return (
+              <button
+                key={slot.id}
+                type="button"
+                onClick={() => onSlotClick(slot)}
+                className={`flex min-h-14 w-full items-center justify-between px-4 py-3 text-left transition active:scale-[0.99] ${
+                  selectionNumber ? "bg-emerald-600 text-white" : "bg-white text-ink"
+                }`}
+                aria-pressed={selectionNumber !== null}
+              >
+                <span className="text-base font-bold">{time}</span>
+                <span
+                  className={`flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold ${
+                    selectionNumber ? "bg-white text-leaf" : "bg-emerald-50 text-leaf"
+                  }`}
+                >
+                  {selectionNumber ? toCircledNumber(selectionNumber) : "○"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type SlotCellProps = {
   slot: AvailabilitySlot;

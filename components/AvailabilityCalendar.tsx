@@ -103,6 +103,10 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   const julyElevenBusySlots = data.diagnostics.busySlots.filter((slot) => {
     return slot.dateLabel.startsWith("7/11");
   });
+  const currentMonthKey = getClientMonthKey(0);
+  const nextMonthKey = getClientMonthKey(1);
+  const canShowPreviousMonth = monthKey !== currentMonthKey;
+  const canShowNextMonth = monthKey !== nextMonthKey;
 
   return (
     <section className={`px-4 pt-5 sm:px-0 ${selectedSlots.length > 0 ? "pb-[25rem]" : "pb-8"}`}>
@@ -135,9 +139,9 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
       <div className="mx-auto mb-4 flex max-w-4xl items-center justify-center gap-4">
         <button
           type="button"
-          onClick={() => setMonthKey((currentMonthKey) => addMonths(currentMonthKey, -1))}
+          onClick={() => setMonthKey((current) => clampClientMonthKey(addMonths(current, -1)))}
           className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-xl font-bold text-slate-700 shadow-sm transition active:scale-95 disabled:opacity-60"
-          disabled={isLoading}
+          disabled={isLoading || !canShowPreviousMonth}
           aria-label="前月を表示"
           title="前月を表示"
         >
@@ -148,9 +152,9 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
         </p>
         <button
           type="button"
-          onClick={() => setMonthKey((currentMonthKey) => addMonths(currentMonthKey, 1))}
+          onClick={() => setMonthKey((current) => clampClientMonthKey(addMonths(current, 1)))}
           className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-xl font-bold text-slate-700 shadow-sm transition active:scale-95 disabled:opacity-60"
-          disabled={isLoading}
+          disabled={isLoading || !canShowNextMonth}
           aria-label="翌月を表示"
           title="翌月を表示"
         >
@@ -603,6 +607,33 @@ function addMonths(monthKey: string, amount: number) {
   const { year, monthIndex } = parseMonthKey(monthKey);
   const date = new Date(year, monthIndex + amount, 1);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function clampClientMonthKey(monthKey: string) {
+  const currentMonthKey = getClientMonthKey(0);
+  const nextMonthKey = getClientMonthKey(1);
+
+  if (compareMonthKey(monthKey, currentMonthKey) < 0) {
+    return currentMonthKey;
+  }
+
+  if (compareMonthKey(monthKey, nextMonthKey) > 0) {
+    return nextMonthKey;
+  }
+
+  return monthKey;
+}
+
+function getClientMonthKey(offset: number) {
+  const today = new Date();
+  const date = new Date(today.getFullYear(), today.getMonth() + offset, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function compareMonthKey(leftMonthKey: string, rightMonthKey: string) {
+  const left = parseMonthKey(leftMonthKey);
+  const right = parseMonthKey(rightMonthKey);
+  return left.year * 12 + left.monthIndex - (right.year * 12 + right.monthIndex);
 }
 
 function formatMonthLabel(monthKey: string) {

@@ -35,10 +35,13 @@ export type MonthWindow = {
 };
 
 export function createMonthWindow(monthKey?: string | null): MonthWindow {
-  const today = new Date();
+  const currentMonth = getTokyoMonthOffset(0);
+  const nextMonth = getTokyoMonthOffset(1);
   const parsedMonth = parseMonthKey(monthKey);
-  const year = parsedMonth?.year ?? today.getFullYear();
-  const monthIndex = parsedMonth?.monthIndex ?? today.getMonth();
+  const requestedMonth = parsedMonth ?? currentMonth;
+  const normalizedMonth = clampMonthToVisibleRange(requestedMonth, currentMonth, nextMonth);
+  const year = normalizedMonth.year;
+  const monthIndex = normalizedMonth.monthIndex;
   const start = new Date(year, monthIndex, 1);
   start.setHours(0, 0, 0, 0);
 
@@ -125,20 +128,77 @@ function isOverlappingBusy(start: Date, end: Date, busyRanges: BusyRange[]) {
 }
 
 function getVisibleStartDate(monthWindow: MonthWindow) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = getTokyoToday();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
 
-  if (today > monthWindow.end) {
+  if (tomorrow > monthWindow.end) {
     const afterMonthEnd = new Date(monthWindow.end);
     afterMonthEnd.setDate(afterMonthEnd.getDate() + 1);
     return afterMonthEnd;
   }
 
-  if (today > monthWindow.start && today <= monthWindow.end) {
-    return today;
+  if (today >= monthWindow.start && today <= monthWindow.end) {
+    return tomorrow;
   }
 
   return monthWindow.start;
+}
+
+function getTokyoToday() {
+  const todayParts = getTokyoDateParts(new Date());
+  const today = new Date(todayParts.year, todayParts.month - 1, todayParts.day);
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+function getTokyoMonthOffset(offset: number) {
+  const todayParts = getTokyoDateParts(new Date());
+  const date = new Date(todayParts.year, todayParts.month - 1 + offset, 1);
+
+  return {
+    year: date.getFullYear(),
+    monthIndex: date.getMonth(),
+  };
+}
+
+function getTokyoDateParts(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const partValue = (type: string) => Number(parts.find((part) => part.type === type)?.value);
+
+  return {
+    year: partValue("year"),
+    month: partValue("month"),
+    day: partValue("day"),
+  };
+}
+
+function clampMonthToVisibleRange(
+  requestedMonth: { year: number; monthIndex: number },
+  currentMonth: { year: number; monthIndex: number },
+  nextMonth: { year: number; monthIndex: number },
+) {
+  if (compareMonth(requestedMonth, currentMonth) < 0) {
+    return currentMonth;
+  }
+
+  if (compareMonth(requestedMonth, nextMonth) > 0) {
+    return nextMonth;
+  }
+
+  return requestedMonth;
+}
+
+function compareMonth(
+  left: { year: number; monthIndex: number },
+  right: { year: number; monthIndex: number },
+) {
+  return left.year * 12 + left.monthIndex - (right.year * 12 + right.monthIndex);
 }
 
 function parseMonthKey(monthKey?: string | null) {

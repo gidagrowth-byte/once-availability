@@ -18,6 +18,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   const [selectedSlots, setSelectedSlots] = useState<AvailabilitySlot[]>([]);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [lineConfirmation, setLineConfirmation] = useState<LineConfirmation | null>(null);
   const [selectedDate, setSelectedDate] = useState(getInitialMobileStartDate(initialData.days));
   const [monthKey, setMonthKey] = useState(initialData.month.key);
   const [storeId, setStoreId] = useState(initialData.store.id);
@@ -53,8 +54,9 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   }
 
   function handleLineClick(event: MouseEvent<HTMLAnchorElement>, generatedMessage: string, destinationUrl: string) {
+    event.preventDefault();
+
     if (selectedSlots.length === 0) {
-      event.preventDefault();
       return;
     }
 
@@ -69,10 +71,41 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
     });
 
     if (!data.store.lineOaId) {
-      event.preventDefault();
       alert("この店舗のLINE設定が未完了です");
       return;
     }
+
+    trackEvent("confirm_modal_open", {
+      store_id: data.store.id,
+      store_name: data.store.name,
+      selected_count: selectedSlots.length,
+      selected_slots: selectedSlots.map((slot) => slot.dateLabel).join(", "),
+    });
+
+    setLineConfirmation({
+      generatedMessage,
+      destinationUrl: href,
+    });
+  }
+
+  function handleConfirmSubmit() {
+    if (!lineConfirmation) {
+      return;
+    }
+
+    console.log({
+      userAgent: window.navigator.userAgent,
+      href: lineConfirmation.destinationUrl,
+      currentUrl: window.location.href,
+      selectedSlots,
+    });
+
+    trackEvent("confirm_submit", {
+      store_id: data.store.id,
+      store_name: data.store.name,
+      selected_count: selectedSlots.length,
+      selected_slots: selectedSlots.map((slot) => slot.dateLabel).join(", "),
+    });
 
     trackEvent("line_send_click", {
       store_id: data.store.id,
@@ -82,9 +115,11 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
     });
 
     if (LINE_NAVIGATION_MODE === "location.href") {
-      event.preventDefault();
-      window.location.href = href;
+      window.location.href = lineConfirmation.destinationUrl;
+      return;
     }
+
+    window.open(lineConfirmation.destinationUrl, "_blank", "noopener,noreferrer");
   }
 
   function handleStoreChange(nextStoreId: string) {
@@ -459,9 +494,23 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
         onCustomerPhoneChange={setCustomerPhone}
         onLineClick={handleLineClick}
       />
+
+      <LineConfirmModal
+        isOpen={lineConfirmation !== null}
+        customerName={customerName.trim()}
+        customerPhone={customerPhone.trim()}
+        selectedSlots={selectedSlots}
+        onClose={() => setLineConfirmation(null)}
+        onSubmit={handleConfirmSubmit}
+      />
     </section>
   );
 }
+
+type LineConfirmation = {
+  generatedMessage: string;
+  destinationUrl: string;
+};
 
 const timeRows = ["09:30", "10:40", "11:50", "13:00", "14:10", "15:20", "16:30", "17:40", "18:50", "20:00"];
 
@@ -655,6 +704,121 @@ function SlotCell({ slot, selectionNumber, onClick }: SlotCellProps) {
         {isSelected ? toCircledNumber(selectionNumber) : "○"}
       </button>
     </td>
+  );
+}
+
+type LineConfirmModalProps = {
+  isOpen: boolean;
+  customerName: string;
+  customerPhone: string;
+  selectedSlots: AvailabilitySlot[];
+  onClose: () => void;
+  onSubmit: () => void;
+};
+
+function LineConfirmModal({
+  isOpen,
+  customerName,
+  customerPhone,
+  selectedSlots,
+  onClose,
+  onSubmit,
+}: LineConfirmModalProps) {
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) {
+    return null;
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-40 flex items-end bg-slate-950/45 px-4 py-4 backdrop-blur-sm sm:items-center sm:justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="line-confirm-title"
+      onClick={onClose}
+    >
+      <div
+        className="w-full rounded-md bg-white p-5 shadow-2xl sm:max-w-lg"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p id="line-confirm-title" className="text-lg font-bold text-ink">
+              送信内容の確認
+            </p>
+            <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
+              内容を確認してからLINEへ進んでください。
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-xl font-bold text-slate-500 transition hover:bg-slate-50 active:scale-95"
+            aria-label="確認モーダルを閉じる"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-4 rounded-md border border-slate-200 bg-slate-50 p-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <p className="text-xs font-bold text-slate-500">お名前</p>
+              <p className="mt-1 min-h-6 text-base font-bold text-ink">{customerName || "未入力"}</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-500">電話番号</p>
+              <p className="mt-1 min-h-6 text-base font-bold text-ink">{customerPhone || "未入力"}</p>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-bold text-slate-500">希望日時</p>
+            <ol className="mt-2 space-y-2 text-sm font-bold leading-6 text-ink sm:text-base">
+              {selectedSlots.map((slot, index) => (
+                <li key={slot.id}>
+                  第{index + 1}希望：{slot.dateLabel}〜
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_1.4fr]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-12 rounded-md border border-slate-300 bg-white px-4 py-3 text-base font-bold text-slate-700 transition hover:bg-slate-50 active:scale-[0.99]"
+          >
+            修正する
+          </button>
+          <button
+            type="button"
+            onClick={onSubmit}
+            className="min-h-12 rounded-md bg-line px-4 py-3 text-base font-bold text-white transition active:scale-[0.99]"
+          >
+            この内容でLINE送信する
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

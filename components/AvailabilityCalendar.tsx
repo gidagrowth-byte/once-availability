@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useAvailability } from "@/hooks/useAvailability";
 import { trackEvent } from "@/lib/analytics";
 import { stores } from "@/lib/stores";
@@ -18,9 +18,10 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   const [selectedSlots, setSelectedSlots] = useState<AvailabilitySlot[]>([]);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [selectedDate, setSelectedDate] = useState(initialData.days[0]?.date ?? "");
+  const [selectedDate, setSelectedDate] = useState(getInitialMobileStartDate(initialData.days));
   const [monthKey, setMonthKey] = useState(initialData.month.key);
   const [storeId, setStoreId] = useState(initialData.store.id);
+  const mobileInitialScopeRef = useRef(`${initialData.store.id}__${initialData.month.key}`);
   const { data, isLoading, error, lastUpdatedAt, refreshAvailability } = useAvailability({
     initialData,
     monthKey,
@@ -126,8 +127,17 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   }, [data.month.key, monthKey]);
 
   useEffect(() => {
-    if (!data.days.some((day) => day.date === selectedDate)) {
-      setSelectedDate(data.days[0]?.date ?? "");
+    const mobileInitialScope = `${data.store.id}__${data.month.key}`;
+
+    if (mobileInitialScopeRef.current !== mobileInitialScope) {
+      mobileInitialScopeRef.current = mobileInitialScope;
+      setSelectedDate(getInitialMobileStartDate(data.days));
+    }
+  }, [data.store.id, data.month.key, data.days]);
+
+  useEffect(() => {
+    if (selectedDate && !data.days.some((day) => day.date === selectedDate)) {
+      setSelectedDate(getInitialMobileStartDate(data.days));
     }
   }, [data.days, selectedDate]);
 
@@ -440,6 +450,11 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
 
 const timeRows = ["09:30", "10:40", "11:50", "13:00", "14:10", "15:20", "16:30", "17:40", "18:50", "20:00"];
 
+function getInitialMobileStartDate(days: AvailabilityResponse["days"]) {
+  const firstAvailableDay = days.find((day) => day.slots.some((slot) => slot.status === "available"));
+  return firstAvailableDay?.date ?? days[0]?.date ?? "";
+}
+
 type MobileAvailabilityViewProps = {
   days: AvailabilityResponse["days"];
   selectedDate: string;
@@ -464,15 +479,15 @@ function MobileAvailabilityView({
   }
 
   const selectedIndex = Math.max(0, days.findIndex((day) => day.date === selectedDate));
-  const groupStartIndex = Math.floor(selectedIndex / 3) * 3;
+  const groupStartIndex = selectedIndex;
   const visibleDays = days.slice(groupStartIndex, groupStartIndex + 3);
+  const hasAnyAvailableSlot = days.some((day) => day.slots.some((slot) => slot.status === "available"));
   const canShowPreviousGroup = groupStartIndex > 0;
   const canShowNextGroup = groupStartIndex + 3 < days.length;
 
   function handleGroupMove(amount: number) {
     const nextStartIndex = Math.min(Math.max(groupStartIndex + amount, 0), Math.max(days.length - 1, 0));
-    const nextGroupStartIndex = Math.floor(nextStartIndex / 3) * 3;
-    const nextDay = days[nextGroupStartIndex];
+    const nextDay = days[nextStartIndex];
 
     if (nextDay) {
       onSelectedDateChange(nextDay.date);
@@ -505,6 +520,12 @@ function MobileAvailabilityView({
           ＞
         </button>
       </div>
+
+      {!hasAnyAvailableSlot ? (
+        <p className="mb-3 rounded-md bg-slate-50 px-3 py-2 text-center text-sm font-bold text-slate-500">
+          現在表示できる空き枠がありません
+        </p>
+      ) : null}
 
       <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-soft">
         <div className="grid grid-cols-[58px_repeat(3,minmax(0,1fr))] border-b border-slate-200 bg-slate-50">

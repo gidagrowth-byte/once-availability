@@ -506,33 +506,6 @@ function MobileAvailabilityView({
         </button>
       </div>
 
-      <div className="-mx-4 mb-3 overflow-x-auto px-4 [scrollbar-width:none]">
-        <div className="flex w-max gap-2">
-          {days.map((day) => {
-            const dayIndex = days.findIndex((item) => item.date === day.date);
-            const isSelected = dayIndex >= groupStartIndex && dayIndex < groupStartIndex + 3;
-
-            return (
-              <button
-                key={day.date}
-                type="button"
-                onClick={() => {
-                  const nextGroupStartIndex = Math.floor(dayIndex / 3) * 3;
-                  onSelectedDateChange(days[nextGroupStartIndex]?.date ?? day.date);
-                }}
-                className={`h-10 min-w-[86px] rounded-md border px-3 text-sm font-bold transition active:scale-[0.98] ${
-                  isSelected
-                    ? "border-leaf bg-leaf text-white"
-                    : "border-slate-200 bg-white text-slate-700"
-                }`}
-              >
-                {day.label}({day.weekday})
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-soft">
         <div className="grid grid-cols-[58px_repeat(3,minmax(0,1fr))] border-b border-slate-200 bg-slate-50">
           <div className="border-r border-slate-200 px-2 py-3 text-center text-xs font-bold text-slate-500">

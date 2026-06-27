@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Analytics } from "@/components/Analytics";
 import { env } from "@/lib/config";
 import "./globals.css";
@@ -9,6 +8,8 @@ export const metadata: Metadata = {
   description: "江戸川橋・護国寺店の空き枠を確認し、LINEで希望日時を送信できます。",
 };
 
+const gtmId = "GTM-WFLSD4F2";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -16,28 +17,28 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+              })(window,document,'script','dataLayer','${gtmId}');
+            `,
+          }}
+        />
+      </head>
       <body>
-        {env.gtmId ? (
-          <>
-            <Script id="gtm" strategy="afterInteractive">
-              {`
-                (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-                new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-                j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-                'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-                })(window,document,'script','dataLayer','${env.gtmId}');
-              `}
-            </Script>
-            <noscript>
-              <iframe
-                src={`https://www.googletagmanager.com/ns.html?id=${env.gtmId}`}
-                height="0"
-                width="0"
-                style={{ display: "none", visibility: "hidden" }}
-              />
-            </noscript>
-          </>
-        ) : null}
+        <noscript>
+          <iframe
+            src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+          />
+        </noscript>
         <Analytics measurementId={env.ga4MeasurementId} />
         {children}
       </body>

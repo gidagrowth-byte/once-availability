@@ -60,16 +60,21 @@ function getRequestedMonths(searchParams: URLSearchParams) {
 }
 
 function createDebugSummary(month: string, availability: AvailabilityResponse): DebugStoreSummary {
-  const targetMonthRows = availability.diagnostics.shiftRows.filter((row) => {
+  const canUseSheetRows = availability.diagnostics.sheetSource === "google-sheets";
+  const shiftRows = canUseSheetRows ? availability.diagnostics.shiftRows : [];
+  const targetMonthRows = shiftRows.filter((row) => {
     return toMonthKeyFromSheetDate(row.日付) === month;
   });
   const shiftedCellsCount = countShiftCells(targetMonthRows, "shifted");
   const blankCellsCount = countShiftCells(targetMonthRows, "blank");
-  const availableSlotsCount = availability.days.reduce(
+  const availableSlotsCount = canUseSheetRows ? availability.days.reduce(
     (count, day) => count + day.slots.filter((slot) => slot.status === "available").length,
     0,
-  );
-  const totalVisibleSlotsCount = availability.days.reduce((count, day) => count + day.slots.length, 0);
+  ) : 0;
+  const totalVisibleSlotsCount = canUseSheetRows
+    ? availability.days.reduce((count, day) => count + day.slots.length, 0)
+    : 0;
+  const busySlotsCount = canUseSheetRows ? availability.diagnostics.busySlots.length : 0;
 
   return {
     storeId: availability.store.id,
@@ -79,14 +84,14 @@ function createDebugSummary(month: string, availability: AvailabilityResponse): 
     shiftSheetName: availability.diagnostics.shiftSheetName,
     sheetSource: availability.diagnostics.sheetSource,
     shiftError: availability.diagnostics.shiftErrorMessage,
-    shiftRowsCount: availability.diagnostics.shiftRows.length,
+    shiftRowsCount: shiftRows.length,
     targetMonthDateRowsCount: targetMonthRows.length,
     shiftedCellsCount,
     blankCellsCount,
     googleCalendarTargetEventCount: availability.filteredEventCount,
     availableSlotsCount,
-    busySlotsCount: availability.diagnostics.busySlots.length,
-    closedSlotsCount: Math.max(totalVisibleSlotsCount - availableSlotsCount - availability.diagnostics.busySlots.length, 0),
+    busySlotsCount,
+    closedSlotsCount: Math.max(totalVisibleSlotsCount - availableSlotsCount - busySlotsCount, 0),
   };
 }
 

@@ -69,16 +69,21 @@ export function createAvailabilityDays(
   return Array.from({ length: daysToShow }, (_, dayIndex) => {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + dayIndex);
+    const dateKey = toDateKey(date);
+
+    if (!options.shiftLookup.hasDateData(dateKey)) {
+      return null;
+    }
 
     const slots = createSlotsForDate(date, busyRanges, options.canUseCalendar, options.shiftLookup);
 
     return {
-      date: toDateKey(date),
+      date: dateKey,
       weekday: jpWeekday.format(date),
       label: jpDate.format(date),
       slots,
     };
-  });
+  }).filter((day): day is AvailabilityDay => day !== null);
 }
 
 export function getFreeBusyWindow(monthWindow: MonthWindow) {

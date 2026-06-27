@@ -110,7 +110,6 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   const previousAvailableMonthKey = activeMonthIndex > 0 ? availableMonths[activeMonthIndex - 1] : null;
   const nextAvailableMonthKey =
     activeMonthIndex >= 0 && activeMonthIndex < availableMonths.length - 1 ? availableMonths[activeMonthIndex + 1] : null;
-  const selectedDay = data.days.find((day) => day.date === selectedDate) ?? data.days[0];
 
   function handleMonthChange(nextMonthKey: string | null) {
     if (!nextMonthKey) {
@@ -233,7 +232,6 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
       <MobileAvailabilityView
         days={data.days}
         selectedDate={selectedDate}
-        selectedDay={selectedDay}
         selectedSlots={selectedSlots}
         onSelectedDateChange={setSelectedDate}
         onSlotClick={handleSlotClick}
@@ -445,7 +443,6 @@ const timeRows = ["09:30", "10:40", "11:50", "13:00", "14:10", "15:20", "16:30",
 type MobileAvailabilityViewProps = {
   days: AvailabilityResponse["days"];
   selectedDate: string;
-  selectedDay: AvailabilityResponse["days"][number] | undefined;
   selectedSlots: AvailabilitySlot[];
   onSelectedDateChange: (date: string) => void;
   onSlotClick: (slot: AvailabilitySlot) => void;
@@ -454,12 +451,11 @@ type MobileAvailabilityViewProps = {
 function MobileAvailabilityView({
   days,
   selectedDate,
-  selectedDay,
   selectedSlots,
   onSelectedDateChange,
   onSlotClick,
 }: MobileAvailabilityViewProps) {
-  if (days.length === 0 || !selectedDay) {
+  if (days.length === 0) {
     return (
       <div className="mx-auto max-w-4xl rounded-md border border-slate-200 bg-white px-4 py-8 text-center text-sm font-bold text-slate-500 md:hidden">
         表示できる日付がありません。
@@ -467,18 +463,63 @@ function MobileAvailabilityView({
     );
   }
 
+  const selectedIndex = Math.max(0, days.findIndex((day) => day.date === selectedDate));
+  const groupStartIndex = Math.floor(selectedIndex / 3) * 3;
+  const visibleDays = days.slice(groupStartIndex, groupStartIndex + 3);
+  const canShowPreviousGroup = groupStartIndex > 0;
+  const canShowNextGroup = groupStartIndex + 3 < days.length;
+
+  function handleGroupMove(amount: number) {
+    const nextStartIndex = Math.min(Math.max(groupStartIndex + amount, 0), Math.max(days.length - 1, 0));
+    const nextGroupStartIndex = Math.floor(nextStartIndex / 3) * 3;
+    const nextDay = days[nextGroupStartIndex];
+
+    if (nextDay) {
+      onSelectedDateChange(nextDay.date);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-4xl md:hidden">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => handleGroupMove(-3)}
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-base font-bold text-slate-700 shadow-sm transition active:scale-95 disabled:opacity-50"
+          disabled={!canShowPreviousGroup}
+          aria-label="前の3日を表示"
+        >
+          ＜
+        </button>
+        <p className="text-sm font-bold text-ink" aria-live="polite">
+          {visibleDays[0]?.label}
+          {visibleDays.length > 1 ? `〜${visibleDays[visibleDays.length - 1]?.label}` : ""}
+        </p>
+        <button
+          type="button"
+          onClick={() => handleGroupMove(3)}
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-base font-bold text-slate-700 shadow-sm transition active:scale-95 disabled:opacity-50"
+          disabled={!canShowNextGroup}
+          aria-label="次の3日を表示"
+        >
+          ＞
+        </button>
+      </div>
+
       <div className="-mx-4 mb-3 overflow-x-auto px-4 [scrollbar-width:none]">
         <div className="flex w-max gap-2">
           {days.map((day) => {
-            const isSelected = day.date === selectedDate;
+            const dayIndex = days.findIndex((item) => item.date === day.date);
+            const isSelected = dayIndex >= groupStartIndex && dayIndex < groupStartIndex + 3;
 
             return (
               <button
                 key={day.date}
                 type="button"
-                onClick={() => onSelectedDateChange(day.date)}
+                onClick={() => {
+                  const nextGroupStartIndex = Math.floor(dayIndex / 3) * 3;
+                  onSelectedDateChange(days[nextGroupStartIndex]?.date ?? day.date);
+                }}
                 className={`h-10 min-w-[86px] rounded-md border px-3 text-sm font-bold transition active:scale-[0.98] ${
                   isSelected
                     ? "border-leaf bg-leaf text-white"
@@ -492,50 +533,73 @@ function MobileAvailabilityView({
         </div>
       </div>
 
-      <div className="rounded-md border border-slate-200 bg-white shadow-soft">
-        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-          <p className={`text-base font-bold ${weekdayTextClass(selectedDay.weekday)}`}>
-            {selectedDay.label}({selectedDay.weekday})
-          </p>
+      <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-soft">
+        <div className="grid grid-cols-[58px_repeat(3,minmax(0,1fr))] border-b border-slate-200 bg-slate-50">
+          <div className="border-r border-slate-200 px-2 py-3 text-center text-xs font-bold text-slate-500">
+            時間
+          </div>
+          {visibleDays.map((day) => (
+            <div key={day.date} className="border-r border-slate-200 px-1 py-3 text-center last:border-r-0">
+              <span className={`block text-sm font-bold leading-5 ${weekdayTextClass(day.weekday)}`}>
+                {day.label}
+              </span>
+              <span className={`block text-xs font-bold leading-4 ${weekdayTextClass(day.weekday)}`}>
+                {day.weekday}
+              </span>
+            </div>
+          ))}
+          {Array.from({ length: 3 - visibleDays.length }, (_, index) => (
+            <div key={`empty-heading-${index}`} className="border-r border-slate-200 last:border-r-0" />
+          ))}
         </div>
-        <div className="divide-y divide-slate-100">
-          {timeRows.map((time) => {
-            const slot = selectedDay.slots.find((item) => item.label === time);
-            const selectionNumber = slot ? getSelectionNumber(selectedSlots, slot.id) : null;
+        {timeRows.map((time) => (
+          <div key={time} className="grid grid-cols-[58px_repeat(3,minmax(0,1fr))] border-b border-slate-100 last:border-b-0">
+            <div className="flex min-h-14 items-center justify-center border-r border-slate-200 bg-white px-1 text-xs font-bold text-slate-600">
+              {time}
+            </div>
+            {visibleDays.map((day) => {
+              const slot = day.slots.find((item) => item.label === time);
+              const selectionNumber = slot ? getSelectionNumber(selectedSlots, slot.id) : null;
 
-            if (!slot || slot.status !== "available") {
+              if (!slot || slot.status !== "available") {
+                return (
+                  <div
+                    key={`${day.date}-${time}`}
+                    className="flex min-h-14 items-center justify-center border-r border-slate-100 bg-slate-50 px-1 last:border-r-0"
+                  >
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-lg font-bold text-slate-400">
+                      ×
+                    </span>
+                  </div>
+                );
+              }
+
               return (
-                <div key={time} className="flex min-h-14 items-center justify-between bg-slate-50 px-4 py-3">
-                  <span className="text-base font-bold text-slate-500">{time}</span>
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-lg font-bold text-slate-400">
-                    ×
-                  </span>
-                </div>
-              );
-            }
-
-            return (
-              <button
-                key={slot.id}
-                type="button"
-                onClick={() => onSlotClick(slot)}
-                className={`flex min-h-14 w-full items-center justify-between px-4 py-3 text-left transition active:scale-[0.99] ${
-                  selectionNumber ? "bg-emerald-600 text-white" : "bg-white text-ink"
-                }`}
-                aria-pressed={selectionNumber !== null}
-              >
-                <span className="text-base font-bold">{time}</span>
-                <span
-                  className={`flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold ${
-                    selectionNumber ? "bg-white text-leaf" : "bg-emerald-50 text-leaf"
+                <button
+                  key={slot.id}
+                  type="button"
+                  onClick={() => onSlotClick(slot)}
+                  className={`flex min-h-14 items-center justify-center border-r border-slate-100 px-1 transition active:scale-[0.98] last:border-r-0 ${
+                    selectionNumber ? "bg-emerald-600" : "bg-white"
                   }`}
+                  aria-label={`${slot.dateLabel}を選択`}
+                  aria-pressed={selectionNumber !== null}
                 >
-                  {selectionNumber ? toCircledNumber(selectionNumber) : "○"}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                  <span
+                    className={`flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold ${
+                      selectionNumber ? "bg-white text-leaf" : "bg-emerald-50 text-leaf"
+                    }`}
+                  >
+                    {selectionNumber ? toCircledNumber(selectionNumber) : "○"}
+                  </span>
+                </button>
+              );
+            })}
+            {Array.from({ length: 3 - visibleDays.length }, (_, index) => (
+              <div key={`empty-${time}-${index}`} className="min-h-14 border-r border-slate-100 bg-slate-50 last:border-r-0" />
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );

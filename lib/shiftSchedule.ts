@@ -32,6 +32,7 @@ export type ShiftLookup = {
   fetchedAt: string;
   errorMessage: string | null;
   hasMonthData: (monthKey: string) => boolean;
+  hasDateData: (dateKey: string) => boolean;
   hasShift: (dateKey: string, time: string) => boolean;
 };
 
@@ -157,8 +158,10 @@ function createShiftLookup(
   errorMessage: string | null,
 ): ShiftLookup {
   const shiftMap = new Map<string, string>();
+  const dateKeys = new Set<string>();
   const availableMonthKeys = new Set<string>();
   const tomorrowDateKey = getTokyoTomorrowDateKey();
+  const maxMonthKey = getTokyoMonthKeyOffset(1);
 
   for (const row of rows) {
     const dateKey = toDateKeyFromSheetDate(row.日付);
@@ -167,7 +170,9 @@ function createShiftLookup(
       continue;
     }
 
-    if (dateKey >= tomorrowDateKey) {
+    dateKeys.add(dateKey);
+
+    if (dateKey >= tomorrowDateKey && dateKey.slice(0, 7) <= maxMonthKey) {
       availableMonthKeys.add(dateKey.slice(0, 7));
     }
 
@@ -185,6 +190,7 @@ function createShiftLookup(
     fetchedAt,
     errorMessage,
     hasMonthData: (monthKey) => sortedAvailableMonthKeys.includes(monthKey),
+    hasDateData: (dateKey) => dateKeys.has(dateKey),
     hasShift: (dateKey, time) => {
       const cellValue = shiftMap.get(createShiftKey(store.id, dateKey, time)) ?? "";
       return cellValue.trim() !== "";
@@ -271,6 +277,12 @@ function getTokyoTomorrowDateKey() {
   const tomorrow = new Date(todayParts.year, todayParts.month - 1, todayParts.day);
   tomorrow.setDate(tomorrow.getDate() + 1);
   return toDateKey(tomorrow);
+}
+
+function getTokyoMonthKeyOffset(offset: number) {
+  const todayParts = getTokyoDateParts(new Date());
+  const date = new Date(todayParts.year, todayParts.month - 1 + offset, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function getTokyoDateParts(date: Date) {

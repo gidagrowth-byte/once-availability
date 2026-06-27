@@ -60,22 +60,16 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
     const href = destinationUrl;
 
     console.log({
-      userAgent: window.navigator.userAgent,
-      href,
-      currentUrl: window.location.href,
       storeId: data.store.id,
       storeName: data.store.name,
-      selectedSlots,
-      customerName: customerName.trim(),
-      customerPhone: customerPhone.trim(),
+      lineOaId: data.store.lineOaId,
       generatedMessage,
       lineUrl: href,
-      navigationMode: LINE_NAVIGATION_MODE,
     });
 
     if (!data.store.lineOaId) {
       event.preventDefault();
-      alert("この店舗のLINE公式アカウントIDが未設定です");
+      alert("この店舗のLINE設定が未完了です");
       return;
     }
 

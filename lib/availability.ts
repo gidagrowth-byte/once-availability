@@ -5,11 +5,17 @@ import { createAvailabilityDays, createMonthWindow, getFreeBusyWindow, type Busy
 import { getStoreById } from "@/lib/stores";
 import type { AvailabilityResponse } from "@/types/availability";
 
-export async function getAvailability(monthKey?: string | null, storeId?: string | null): Promise<AvailabilityResponse> {
+export async function getAvailability(
+  monthKey?: string | null,
+  storeId?: string | null,
+  options: { resolveToAvailableMonth?: boolean } = {},
+): Promise<AvailabilityResponse> {
   const store = getStoreById(storeId);
   const requestedMonthWindow = createMonthWindow(monthKey);
   const shiftLookup = await fetchShiftLookup(requestedMonthWindow, store);
-  const resolvedMonthKey = resolveAvailableMonthKey(requestedMonthWindow.monthKey, shiftLookup.availableMonthKeys);
+  const resolvedMonthKey = options.resolveToAvailableMonth === false
+    ? requestedMonthWindow.monthKey
+    : resolveAvailableMonthKey(requestedMonthWindow.monthKey, shiftLookup.availableMonthKeys);
   const monthWindow = createMonthWindow(resolvedMonthKey);
   const initialWindow = getFreeBusyWindow(monthWindow);
   let source: AvailabilityResponse["source"] = "google-calendar";

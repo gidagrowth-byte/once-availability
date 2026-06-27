@@ -21,7 +21,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   const [selectedDate, setSelectedDate] = useState(initialData.days[0]?.date ?? "");
   const [monthKey, setMonthKey] = useState(initialData.month.key);
   const [storeId, setStoreId] = useState(initialData.store.id);
-  const { data, isLoading, error, lastUpdatedAt, availableCount, refreshAvailability } = useAvailability({
+  const { data, isLoading, error, lastUpdatedAt, refreshAvailability } = useAvailability({
     initialData,
     monthKey,
     storeId,
@@ -170,17 +170,21 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
         </button>
       </div>
 
-      <div className="mx-auto mb-4 flex max-w-4xl items-center justify-between gap-3">
-        <div>
+      <div className="mx-auto mb-4 flex max-w-4xl items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 text-center">
           <h2 className="text-lg font-bold text-ink">空き状況</h2>
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm">
             <span className="font-bold text-leaf">○ 空きあり</span>
             <span className="font-bold text-slate-500">× 満席</span>
           </div>
-          <p className="mt-2 text-sm font-semibold text-ink">希望日時を選択してください</p>
-          <p className="mt-1 text-xs text-slate-500">
-            {availableCount > 0 ? `${availableCount}件の候補があります` : "現在表示できる空き枠がありません"}
-          </p>
+          <div className="mt-4 md:mt-3">
+            <p className="text-[15px] font-bold leading-6 text-ink md:text-sm">
+              希望の日時を3つまでご選択ください
+            </p>
+            <p className="mt-0.5 text-xs font-semibold leading-5 text-slate-500">
+              （第1〜第3希望）
+            </p>
+          </div>
           <p className="mt-2 hidden text-xs font-semibold text-slate-500 md:block">
             横にスライドすると、他の日付も確認できます。
           </p>

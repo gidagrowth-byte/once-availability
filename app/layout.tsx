@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { Analytics } from "@/components/Analytics";
-import { env } from "@/lib/config";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,6 +7,7 @@ export const metadata: Metadata = {
 };
 
 const gtmId = "GTM-WFLSD4F2";
+const ga4MeasurementId = "G-460Z0PYTE3";
 
 export default function RootLayout({
   children,
@@ -21,6 +20,11 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              window.dataLayer = window.dataLayer || [];
+              window.dataLayer.push({
+                event: 'ga4_measurement_ready',
+                ga4_measurement_id: '${ga4MeasurementId}'
+              });
               (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
               new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
               j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
@@ -39,7 +43,6 @@ export default function RootLayout({
             style={{ display: "none", visibility: "hidden" }}
           />
         </noscript>
-        <Analytics measurementId={env.ga4MeasurementId} />
         {children}
       </body>
     </html>

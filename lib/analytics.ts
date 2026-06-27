@@ -3,7 +3,6 @@
 declare global {
   interface Window {
     dataLayer?: Record<string, unknown>[];
-    gtag?: (...args: unknown[]) => void;
   }
 }
 
@@ -20,8 +19,4 @@ export function trackEvent(eventName: string, params: Record<string, unknown>) {
     event: eventName,
     ...params,
   });
-
-  if (typeof window.gtag === "function") {
-    window.gtag("event", eventName, params);
-  }
 }

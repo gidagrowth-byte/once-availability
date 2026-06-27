@@ -22,6 +22,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   const [monthKey, setMonthKey] = useState(initialData.month.key);
   const [storeId, setStoreId] = useState(initialData.store.id);
   const mobileInitialScopeRef = useRef(`${initialData.store.id}__${initialData.month.key}`);
+  const availabilityViewScopeRef = useRef("");
   const { data, isLoading, error, lastUpdatedAt, refreshAvailability } = useAvailability({
     initialData,
     monthKey,
@@ -44,12 +45,10 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
 
       return [...currentSlots, slot];
     });
-    trackEvent("select_available_slot", {
+    trackEvent("slot_select", {
       store_id: data.store.id,
-      store_name: data.store.name,
-      slot_start: slot.startsAt,
-      slot_label: slot.dateLabel,
-      calendar_source: data.source,
+      date: getSlotDate(slot),
+      time: slot.label,
     });
   }
 
@@ -75,8 +74,9 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
       return;
     }
 
-    trackEvent("line_request_click", {
-      store: data.store.name,
+    trackEvent("line_send_click", {
+      store_id: data.store.id,
+      store_name: data.store.name,
       selected_count: selectedSlots.length,
       selected_slots: selectedSlots.map((slot) => slot.dateLabel).join(", "),
     });
@@ -90,7 +90,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   function handleStoreChange(nextStoreId: string) {
     setStoreId(nextStoreId);
     setSelectedSlots([]);
-    trackEvent("change_store", {
+    trackEvent("store_change", {
       store_id: nextStoreId,
     });
 
@@ -125,6 +125,21 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
       setMonthKey(data.month.key);
     }
   }, [data.month.key, monthKey]);
+
+  useEffect(() => {
+    const availabilityViewScope = `${data.store.id}__${data.month.key}`;
+
+    if (availabilityViewScopeRef.current === availabilityViewScope) {
+      return;
+    }
+
+    availabilityViewScopeRef.current = availabilityViewScope;
+    trackEvent("availability_view", {
+      store_id: data.store.id,
+      store_name: data.store.name,
+      selected_month: data.month.key,
+    });
+  }, [data.store.id, data.store.name, data.month.key]);
 
   useEffect(() => {
     const mobileInitialScope = `${data.store.id}__${data.month.key}`;
@@ -453,6 +468,10 @@ const timeRows = ["09:30", "10:40", "11:50", "13:00", "14:10", "15:20", "16:30",
 function getInitialMobileStartDate(days: AvailabilityResponse["days"]) {
   const firstAvailableDay = days.find((day) => day.slots.some((slot) => slot.status === "available"));
   return firstAvailableDay?.date ?? days[0]?.date ?? "";
+}
+
+function getSlotDate(slot: AvailabilitySlot) {
+  return slot.id.slice(0, 10);
 }
 
 type MobileAvailabilityViewProps = {

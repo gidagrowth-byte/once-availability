@@ -936,28 +936,28 @@ function LineFixedBar({
   const destinationUrl = createLineUrl(lineOaId, generatedMessage);
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 max-h-[74vh] overflow-y-auto border-t border-slate-200 bg-white/95 px-4 pb-[calc(10px+env(safe-area-inset-bottom))] pt-2.5 shadow-[0_-10px_30px_rgba(24,33,47,0.14)] backdrop-blur sm:pb-[calc(12px+env(safe-area-inset-bottom))] sm:pt-3">
-      <div className="mx-auto flex max-w-4xl flex-col gap-2 sm:gap-3">
+    <div className="fixed inset-x-0 bottom-0 z-30 max-h-[68vh] overflow-y-auto border-t border-slate-200 bg-white/95 px-4 pb-[calc(8px+env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_rgba(24,33,47,0.14)] backdrop-blur sm:max-h-[78vh] sm:pb-[calc(12px+env(safe-area-inset-bottom))] sm:pt-3">
+      <div className="mx-auto flex max-w-4xl flex-col gap-1.5 sm:gap-3">
         {selectedCount > 0 ? (
           <>
-            <div className="grid gap-2 sm:grid-cols-2 sm:gap-3">
+            <div className="grid gap-1.5 sm:grid-cols-2 sm:gap-3">
               <label className="block">
-                <span className="mb-0.5 block text-[11px] font-bold text-slate-500 sm:mb-1 sm:text-xs">お名前</span>
+                <span className="mb-px block text-[10px] font-bold leading-4 text-slate-500 sm:mb-1 sm:text-xs">お名前</span>
                 <input
                   type="text"
                   value={customerName}
                   onChange={(event) => onCustomerNameChange(event.target.value)}
-                  className="min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100 sm:h-11"
+                  className="min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100 sm:h-11 sm:text-base"
                   autoComplete="name"
                 />
               </label>
               <label className="block">
-                <span className="mb-0.5 block text-[11px] font-bold text-slate-500 sm:mb-1 sm:text-xs">電話番号</span>
+                <span className="mb-px block text-[10px] font-bold leading-4 text-slate-500 sm:mb-1 sm:text-xs">電話番号</span>
                 <input
                   type="tel"
                   value={customerPhone}
                   onChange={(event) => onCustomerPhoneChange(event.target.value.replace(/[^\d-]/g, ""))}
-                  className="min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100 sm:h-11"
+                  className="min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100 sm:h-11 sm:text-base"
                   inputMode="tel"
                   pattern="[0-9-]*"
                   autoComplete="tel"
@@ -966,8 +966,8 @@ function LineFixedBar({
             </div>
 
             <div className="w-full text-left">
-              <p className="text-[11px] font-bold text-slate-500 sm:text-xs">選択中の希望日時</p>
-              <ol className="mt-0.5 space-y-0.5 text-sm font-bold leading-5 text-ink sm:mt-1 sm:space-y-1 sm:text-base sm:leading-6">
+              <p className="text-[10px] font-bold leading-4 text-slate-500 sm:text-xs">選択中の希望日時</p>
+              <ol className="mt-px space-y-0 text-[13px] font-bold leading-[18px] text-ink sm:mt-1 sm:space-y-1 sm:text-base sm:leading-6">
                 {selectedSlots.map((slot, index) => (
                   <li key={slot.id}>
                     第{index + 1}希望：{slot.dateLabel}〜
@@ -975,7 +975,7 @@ function LineFixedBar({
                 ))}
               </ol>
               {selectedCount === 1 ? (
-                <p className="mt-0.5 text-[11px] font-semibold text-slate-500 sm:mt-1 sm:text-xs">
+                <p className="mt-px text-[10px] font-semibold leading-4 text-slate-500 sm:mt-1 sm:text-xs">
                   （第2・第3希望も追加できます）
                 </p>
               ) : null}
@@ -996,13 +996,13 @@ function LineFixedBar({
 
             onLineClick(event, generatedMessage, destinationUrl);
           }}
-          className={`flex min-h-12 w-full flex-col items-center justify-center rounded-md px-5 py-3 text-center text-base font-bold text-white transition active:scale-[0.99] sm:min-h-14 sm:py-4 ${
+          className={`flex min-h-11 w-full flex-col items-center justify-center rounded-md px-4 py-2 text-center text-[15px] font-bold text-white transition active:scale-[0.99] sm:min-h-14 sm:px-5 sm:py-4 sm:text-base ${
             canSubmit ? "bg-line" : "pointer-events-none bg-slate-300 opacity-70"
           }`}
         >
           <span>{ctaLabel}</span>
           {ctaSubText ? (
-            <span className="mt-0.5 text-[11px] font-bold text-white/90 sm:text-xs">{ctaSubText}</span>
+            <span className="text-[10px] font-bold leading-4 text-white/90 sm:mt-0.5 sm:text-xs">{ctaSubText}</span>
           ) : null}
         </a>
       </div>

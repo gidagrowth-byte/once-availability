@@ -891,7 +891,7 @@ function LineFixedBar({
                   type="text"
                   value={customerName}
                   onChange={(event) => onCustomerNameChange(event.target.value)}
-                  className="min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100 sm:h-11 sm:text-base"
+                  className="min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-base font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100 sm:h-11"
                   autoComplete="name"
                 />
               </label>
@@ -901,7 +901,7 @@ function LineFixedBar({
                   type="tel"
                   value={customerPhone}
                   onChange={(event) => onCustomerPhoneChange(event.target.value.replace(/[^\d-]/g, ""))}
-                  className="min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100 sm:h-11 sm:text-base"
+                  className="min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-base font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100 sm:h-11"
                   inputMode="tel"
                   pattern="[0-9-]*"
                   autoComplete="tel"
@@ -925,8 +925,8 @@ function LineFixedBar({
                   </p>
                 ) : null}
               </div>
-              <div className="flex shrink-0 flex-col items-center gap-1 sm:hidden">
-                <p className="whitespace-nowrap text-[10px] font-bold leading-4 text-orange-600">
+              <div className="flex w-[128px] shrink-0 flex-col items-center gap-1 sm:hidden">
+                <p className="animate-tap-nudge whitespace-nowrap text-[10px] font-bold leading-4 text-orange-600">
                   👉 こちらをタップ
                 </p>
                 <button
@@ -939,12 +939,12 @@ function LineFixedBar({
 
                     onLineClick(generatedMessage, destinationUrl);
                   }}
-                  className={`flex h-14 w-14 items-center justify-center rounded-full text-sm font-bold shadow-sm transition active:scale-95 disabled:shadow-none ${
+                  className={`flex h-14 w-full items-center justify-center rounded-full px-3 text-sm font-bold shadow-sm transition active:scale-95 disabled:shadow-none ${
                     canSubmit ? "bg-line text-white" : "bg-slate-200 text-slate-400"
                   }`}
                   aria-label="LINE送信内容を確認する"
                 >
-                  LINE
+                  LINEで送信
                 </button>
               </div>
             </div>

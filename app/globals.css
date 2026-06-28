@@ -31,3 +31,18 @@ button,
 a {
   -webkit-tap-highlight-color: transparent;
 }
+
+@keyframes tap-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(4px);
+  }
+}
+
+.animate-tap-nudge {
+  animation: tap-nudge 1s ease-in-out infinite;
+}

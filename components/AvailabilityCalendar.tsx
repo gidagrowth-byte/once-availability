@@ -25,7 +25,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   const mobileInitialScopeRef = useRef(`${initialData.store.id}__${initialData.month.key}`);
   const availabilityViewScopeRef = useRef("");
   const stepViewScopeRef = useRef("");
-  const { data, isLoading, error, lastUpdatedAt } = useAvailability({
+  const { data, isLoading, error } = useAvailability({
     initialData,
     monthKey,
     storeId,
@@ -283,12 +283,6 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
             横にスライドすると、他の日付も確認できます。
           </p>
         </div>
-
-        <StepGuideCard
-          currentStep={currentStep}
-          selectedCount={selectedSlots.length}
-          lastUpdatedAt={lastUpdatedAt}
-        />
       </div>
 
       {error ? (
@@ -533,34 +527,6 @@ function getSlotDate(slot: AvailabilitySlot) {
 
 type ReservationStep = 1 | 2 | 3;
 
-type StepGuideCardProps = {
-  currentStep: ReservationStep;
-  selectedCount: number;
-  lastUpdatedAt: Date | null;
-};
-
-function StepGuideCard({ currentStep, selectedCount, lastUpdatedAt }: StepGuideCardProps) {
-  const stepMessage = getStepMessage(currentStep);
-  const stepSubMessage = getStepSubMessage(currentStep, selectedCount);
-
-  return (
-    <div className="mt-4 rounded-md border border-emerald-100 bg-emerald-50 px-4 py-3 shadow-sm md:bg-white">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-bold tracking-wide text-leaf">STEP{currentStep} / 3</p>
-          <p className="mt-1 text-[15px] font-bold leading-6 text-ink">{stepMessage}</p>
-          {stepSubMessage ? (
-            <p className="mt-0.5 text-sm font-semibold leading-5 text-slate-600">{stepSubMessage}</p>
-          ) : null}
-        </div>
-        <p className="shrink-0 whitespace-nowrap pt-0.5 text-[11px] font-semibold text-slate-500" aria-live="polite">
-          更新：{lastUpdatedAt ? formatLastUpdatedTime(lastUpdatedAt) : "--:--"}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function getCurrentStep(selectedCount: number, isCustomerInfoComplete: boolean): ReservationStep {
   if (selectedCount === 0) {
     return 1;
@@ -571,34 +537,6 @@ function getCurrentStep(selectedCount: number, isCustomerInfoComplete: boolean):
   }
 
   return 2;
-}
-
-function getStepMessage(currentStep: ReservationStep) {
-  if (currentStep === 1) {
-    return "○をタップして希望日時を選択";
-  }
-
-  if (currentStep === 2) {
-    return "お名前・電話番号を入力";
-  }
-
-  return "内容を確認してLINE送信";
-}
-
-function getStepSubMessage(currentStep: ReservationStep, selectedCount: number) {
-  if (currentStep === 1) {
-    return "1〜3件まで送信できます";
-  }
-
-  if (currentStep === 2) {
-    const remainingCount = 3 - selectedCount;
-
-    if (remainingCount >= 1) {
-      return `あと${remainingCount}件まで追加できます`;
-    }
-  }
-
-  return "";
 }
 
 type MobileAvailabilityViewProps = {
@@ -940,6 +878,10 @@ function LineFixedBar({
       <div className="mx-auto flex max-w-4xl flex-col gap-1.5 sm:gap-3">
         {selectedCount > 0 ? (
           <>
+            <p className="whitespace-pre-line rounded border border-orange-100 bg-orange-50 px-2.5 py-1.5 text-[11px] font-bold leading-[17px] text-orange-700 sm:text-xs sm:leading-5">
+              {getFormGuideText(selectedCount)}
+            </p>
+
             <div className="grid gap-1.5 sm:grid-cols-2 sm:gap-3">
               <label className="block">
                 <span className="mb-px block text-[10px] font-bold leading-4 text-slate-500 sm:mb-1 sm:text-xs">お名前</span>
@@ -983,28 +925,35 @@ function LineFixedBar({
           </>
         ) : null}
 
-        <a
-          href={destinationUrl || "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-disabled={!canSubmit}
-          onClick={(event) => {
-            if (!canSubmit) {
-              event.preventDefault();
-              return;
-            }
-
-            onLineClick(event, generatedMessage, destinationUrl);
-          }}
-          className={`flex min-h-11 w-full flex-col items-center justify-center rounded-md px-4 py-2 text-center text-[15px] font-bold text-white transition active:scale-[0.99] sm:min-h-14 sm:px-5 sm:py-4 sm:text-base ${
-            canSubmit ? "bg-line" : "pointer-events-none bg-slate-300 opacity-70"
-          }`}
-        >
-          <span>{ctaLabel}</span>
-          {ctaSubText ? (
-            <span className="text-[10px] font-bold leading-4 text-white/90 sm:mt-0.5 sm:text-xs">{ctaSubText}</span>
+        <div className={`relative ${canSubmit ? "pt-3" : ""} sm:pt-0`}>
+          {canSubmit ? (
+            <p className="absolute right-1 top-0 text-[11px] font-bold leading-4 text-orange-600 sm:-top-5 sm:text-xs">
+              👉 こちらをタップ
+            </p>
           ) : null}
-        </a>
+          <a
+            href={destinationUrl || "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-disabled={!canSubmit}
+            onClick={(event) => {
+              if (!canSubmit) {
+                event.preventDefault();
+                return;
+              }
+
+              onLineClick(event, generatedMessage, destinationUrl);
+            }}
+            className={`flex min-h-11 w-full flex-col items-center justify-center rounded-md px-4 py-2 text-center text-[15px] font-bold text-white transition active:scale-[0.99] sm:min-h-14 sm:px-5 sm:py-4 sm:text-base ${
+              canSubmit ? "bg-line" : "pointer-events-none bg-slate-300 opacity-70"
+            }`}
+          >
+            <span>{ctaLabel}</span>
+            {ctaSubText ? (
+              <span className="text-[10px] font-bold leading-4 text-white/90 sm:mt-0.5 sm:text-xs">{ctaSubText}</span>
+            ) : null}
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -1056,6 +1005,18 @@ function getLineCtaSubText(selectedCount: number) {
   }
 
   return "";
+}
+
+function getFormGuideText(selectedCount: number) {
+  if (selectedCount === 1) {
+    return "あと2件まで選択できます。\nお名前と電話番号をご記載ください。";
+  }
+
+  if (selectedCount === 2) {
+    return "あと1件まで選択できます。\nお名前と電話番号をご記載ください。";
+  }
+
+  return "お名前と電話番号をご記載ください。";
 }
 
 function getConfirmationSelectionGuide(selectedCount: number) {

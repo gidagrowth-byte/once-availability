@@ -1,18 +1,29 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+const appUrl = "https://once-availability.vercel.app";
+const sharedTitle = "スタジオONCE 空き枠確認";
+const sharedDescription = "ご希望店舗の空き枠を確認し、LINEで希望日時を送信できます。";
+
 export const metadata: Metadata = {
-  title: "スタジオONCE 空き枠確認",
-  description: "ご希望店舗の空き枠を確認し、LINEで希望日時を送信できます。",
+  metadataBase: new URL(appUrl),
+  title: sharedTitle,
+  description: sharedDescription,
+  alternates: {
+    canonical: appUrl,
+  },
   openGraph: {
-    title: "スタジオONCE 空き枠確認",
-    description: "ご希望店舗の空き枠を確認し、LINEで希望日時を送信できます。",
+    title: sharedTitle,
+    description: sharedDescription,
+    url: appUrl,
+    siteName: "スタジオONCE",
+    locale: "ja_JP",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "スタジオONCE 空き枠確認",
-    description: "ご希望店舗の空き枠を確認し、LINEで希望日時を送信できます。",
+    title: sharedTitle,
+    description: sharedDescription,
   },
 };
 

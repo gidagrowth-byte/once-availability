@@ -149,6 +149,15 @@ function getClarityTags(eventName: string, params: Record<string, unknown>) {
     });
   }
 
+  if (eventName === "step1_view" || eventName === "step2_view" || eventName === "step3_view") {
+    return pickDefined({
+      event: eventName,
+      last_event: eventName,
+      store_id: params.store_id,
+      selected_count: params.selected_count,
+    });
+  }
+
   return {};
 }
 

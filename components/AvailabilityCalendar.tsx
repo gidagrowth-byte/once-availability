@@ -24,7 +24,8 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   const [storeId, setStoreId] = useState(initialData.store.id);
   const mobileInitialScopeRef = useRef(`${initialData.store.id}__${initialData.month.key}`);
   const availabilityViewScopeRef = useRef("");
-  const { data, isLoading, error, lastUpdatedAt, refreshAvailability } = useAvailability({
+  const stepViewScopeRef = useRef("");
+  const { data, isLoading, error, lastUpdatedAt } = useAvailability({
     initialData,
     monthKey,
     storeId,
@@ -146,6 +147,8 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   const previousAvailableMonthKey = activeMonthIndex > 0 ? availableMonths[activeMonthIndex - 1] : null;
   const nextAvailableMonthKey =
     activeMonthIndex >= 0 && activeMonthIndex < availableMonths.length - 1 ? availableMonths[activeMonthIndex + 1] : null;
+  const isCustomerInfoComplete = customerName.trim().length > 0 && customerPhone.trim().length > 0;
+  const currentStep = getCurrentStep(selectedSlots.length, isCustomerInfoComplete);
 
   function handleMonthChange(nextMonthKey: string | null) {
     if (!nextMonthKey) {
@@ -175,6 +178,22 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
       selected_month: data.month.key,
     });
   }, [data.store.id, data.store.name, data.month.key]);
+
+  useEffect(() => {
+    const stepViewScope = `${data.store.id}__${data.month.key}__step${currentStep}`;
+
+    if (stepViewScopeRef.current === stepViewScope) {
+      return;
+    }
+
+    stepViewScopeRef.current = stepViewScope;
+    trackEvent(`step${currentStep}_view`, {
+      store_id: data.store.id,
+      store_name: data.store.name,
+      selected_month: data.month.key,
+      selected_count: selectedSlots.length,
+    });
+  }, [currentStep, data.store.id, data.store.name, data.month.key, selectedSlots.length]);
 
   useEffect(() => {
     const mobileInitialScope = `${data.store.id}__${data.month.key}`;
@@ -245,8 +264,8 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
         </button>
       </div>
 
-      <div className="mx-auto mb-4 flex max-w-4xl items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
+      <div className="mx-auto mb-4 max-w-4xl">
+        <div className="min-w-0">
           <h2 className="text-lg font-bold text-ink">空き状況</h2>
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
             <span className="font-bold text-leaf">○ 空きあり</span>
@@ -264,23 +283,12 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
             横にスライドすると、他の日付も確認できます。
           </p>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          <button
-            type="button"
-            onClick={() => refreshAvailability({ bypassCache: true })}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition active:scale-95 disabled:opacity-60"
-            disabled={isLoading}
-            aria-label="空き枠を更新"
-            title="空き枠を更新"
-          >
-            <span className={`text-base ${isLoading ? "animate-spin" : ""}`} aria-hidden>
-              ↻
-            </span>
-          </button>
-          <p className="whitespace-nowrap text-xs font-semibold text-slate-500" aria-live="polite">
-            最終更新：{lastUpdatedAt ? formatLastUpdatedTime(lastUpdatedAt) : "--:--"}
-          </p>
-        </div>
+
+        <StepGuideCard
+          currentStep={currentStep}
+          selectedCount={selectedSlots.length}
+          lastUpdatedAt={lastUpdatedAt}
+        />
       </div>
 
       {error ? (
@@ -521,6 +529,76 @@ function getInitialMobileStartDate(days: AvailabilityResponse["days"]) {
 
 function getSlotDate(slot: AvailabilitySlot) {
   return slot.id.slice(0, 10);
+}
+
+type ReservationStep = 1 | 2 | 3;
+
+type StepGuideCardProps = {
+  currentStep: ReservationStep;
+  selectedCount: number;
+  lastUpdatedAt: Date | null;
+};
+
+function StepGuideCard({ currentStep, selectedCount, lastUpdatedAt }: StepGuideCardProps) {
+  const stepMessage = getStepMessage(currentStep);
+  const stepSubMessage = getStepSubMessage(currentStep, selectedCount);
+
+  return (
+    <div className="mt-4 rounded-md border border-emerald-100 bg-emerald-50 px-4 py-3 shadow-sm md:bg-white">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-bold tracking-wide text-leaf">STEP{currentStep} / 3</p>
+          <p className="mt-1 text-[15px] font-bold leading-6 text-ink">{stepMessage}</p>
+          {stepSubMessage ? (
+            <p className="mt-0.5 text-sm font-semibold leading-5 text-slate-600">{stepSubMessage}</p>
+          ) : null}
+        </div>
+        <p className="shrink-0 whitespace-nowrap pt-0.5 text-[11px] font-semibold text-slate-500" aria-live="polite">
+          更新：{lastUpdatedAt ? formatLastUpdatedTime(lastUpdatedAt) : "--:--"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function getCurrentStep(selectedCount: number, isCustomerInfoComplete: boolean): ReservationStep {
+  if (selectedCount === 0) {
+    return 1;
+  }
+
+  if (isCustomerInfoComplete) {
+    return 3;
+  }
+
+  return 2;
+}
+
+function getStepMessage(currentStep: ReservationStep) {
+  if (currentStep === 1) {
+    return "○をタップして希望日時を選択";
+  }
+
+  if (currentStep === 2) {
+    return "お名前・電話番号を入力";
+  }
+
+  return "内容を確認してLINE送信";
+}
+
+function getStepSubMessage(currentStep: ReservationStep, selectedCount: number) {
+  if (currentStep === 1) {
+    return "1〜3件まで送信できます";
+  }
+
+  if (currentStep === 2) {
+    const remainingCount = 3 - selectedCount;
+
+    if (remainingCount >= 1) {
+      return `あと${remainingCount}件まで追加できます`;
+    }
+  }
+
+  return "";
 }
 
 type MobileAvailabilityViewProps = {

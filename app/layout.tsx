@@ -2,8 +2,18 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "江戸川橋・護国寺店 空き枠確認",
-  description: "江戸川橋・護国寺店の空き枠を確認し、LINEで希望日時を送信できます。",
+  title: "スタジオONCE 空き枠確認",
+  description: "ご希望店舗の空き枠を確認し、LINEで希望日時を送信できます。",
+  openGraph: {
+    title: "スタジオONCE 空き枠確認",
+    description: "ご希望店舗の空き枠を確認し、LINEで希望日時を送信できます。",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "スタジオONCE 空き枠確認",
+    description: "ご希望店舗の空き枠を確認し、LINEで希望日時を送信できます。",
+  },
 };
 
 const gtmId = "GTM-WFLSD4F2";

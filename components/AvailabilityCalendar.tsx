@@ -32,6 +32,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
     selectedSlots,
     onSelectedSlotsChange: setSelectedSlots,
   });
+  const timeRows = getTimeRows(data.days);
 
   function handleSlotClick(slot: AvailabilitySlot) {
     setSelectedSlots((currentSlots) => {
@@ -293,6 +294,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
         days={data.days}
         selectedDate={selectedDate}
         selectedSlots={selectedSlots}
+        timeRows={timeRows}
         onSelectedDateChange={setSelectedDate}
         onSlotClick={handleSlotClick}
       />
@@ -512,7 +514,12 @@ type LineConfirmation = {
   destinationUrl: string;
 };
 
-const timeRows = ["09:30", "10:40", "11:50", "13:00", "14:10", "15:20", "16:30", "17:40", "18:50", "20:00"];
+const displayTimeRows = ["09:30", "10:40", "11:50", "13:00", "14:10", "15:20", "16:30", "17:40", "18:50", "20:00", "21:10"];
+
+function getTimeRows(days: AvailabilityResponse["days"]) {
+  const slotLabels = new Set(days.flatMap((day) => day.slots.map((slot) => slot.label)));
+  return displayTimeRows.filter((time) => slotLabels.has(time));
+}
 
 function getInitialMobileStartDate(days: AvailabilityResponse["days"]) {
   const firstAvailableDay = days.find((day) => day.slots.some((slot) => slot.status === "available"));
@@ -541,6 +548,7 @@ type MobileAvailabilityViewProps = {
   days: AvailabilityResponse["days"];
   selectedDate: string;
   selectedSlots: AvailabilitySlot[];
+  timeRows: string[];
   onSelectedDateChange: (date: string) => void;
   onSlotClick: (slot: AvailabilitySlot) => void;
 };
@@ -549,6 +557,7 @@ function MobileAvailabilityView({
   days,
   selectedDate,
   selectedSlots,
+  timeRows,
   onSelectedDateChange,
   onSlotClick,
 }: MobileAvailabilityViewProps) {

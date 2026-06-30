@@ -16,6 +16,7 @@ export const shiftTimeColumns = [
   { time: "17:40", column: "17:40" },
   { time: "18:50", column: "18:50" },
   { time: "20:00", column: "20:00" },
+  { time: "21:10", column: "21:10" },
 ] as const;
 
 type ShiftTimeColumn = (typeof shiftTimeColumns)[number]["column"];
@@ -84,7 +85,7 @@ async function fetchGoogleSheetsShiftRows(store: Store) {
     dateTimeRenderOption: "FORMATTED_STRING",
     majorDimension: "ROWS",
   });
-  const range = `${quoteSheetName(getShiftSheetName(store))}!A:L`;
+  const range = `${quoteSheetName(getShiftSheetName(store))}!A:M`;
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?${params.toString()}`;
 
   const response = await fetch(url, {
@@ -146,6 +147,7 @@ function parseShiftRows(values: string[][]): ShiftRow[] {
       "17:40": normalizeCell(row[9]),
       "18:50": normalizeCell(row[10]),
       "20:00": normalizeCell(row[11]),
+      "21:10": normalizeCell(row[12]),
     }))
     .filter((row) => row.店舗.length > 0 && row.日付.length > 0);
 }
@@ -219,6 +221,7 @@ function createDummyShiftRows(monthWindow: MonthWindow, store: Store): ShiftRow[
       "17:40": staffFor(date, "17:40"),
       "18:50": staffFor(date, "18:50"),
       "20:00": staffFor(date, "20:00"),
+      "21:10": staffFor(date, "21:10"),
     });
   }
 

@@ -6,6 +6,7 @@ export type Store = {
   type: StoreType;
   keywords: readonly string[];
   shiftSheetName?: string;
+  extraSlotTimes?: readonly string[];
   lineUrl: string;
   lineOaId: string;
   area: string;
@@ -67,6 +68,7 @@ export const stores = [
     type: "fc",
     keywords: ["清澄白河店"],
     shiftSheetName: "kiyosumishirakawa",
+    extraSlotTimes: ["21:10"],
     lineUrl: "",
     lineOaId: "@080fklpc",
     area: "江東区・清澄白河",
@@ -78,6 +80,7 @@ export const stores = [
     name: "住吉・菊川店",
     type: "fc",
     keywords: ["住吉・菊川店"],
+    extraSlotTimes: ["21:10"],
     lineUrl: "",
     lineOaId: "@340hcwpv",
     area: "江東区・住吉 / 菊川",

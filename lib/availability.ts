@@ -67,7 +67,7 @@ export async function getAvailability(
   }
 
   const days = shiftLookup.hasMonthData(monthWindow.monthKey)
-    ? createAvailabilityDays(busyRanges, monthWindow, { canUseCalendar, shiftLookup })
+    ? createAvailabilityDays(busyRanges, monthWindow, { canUseCalendar, shiftLookup, store })
     : [];
   const busySlots = collectCalendarBusySlots(days, busyRanges);
 

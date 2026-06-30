@@ -1,8 +1,10 @@
 import type { ShiftLookup } from "@/lib/shiftSchedule";
+import type { Store } from "@/lib/stores";
 import type { AvailabilityDay, AvailabilitySlot } from "@/types/availability";
 
 export const slotMinutes = 60;
-export const slotTimes = ["09:30", "10:40", "11:50", "13:00", "14:10", "15:20", "16:30", "17:40", "18:50", "20:00"] as const;
+export const baseSlotTimes = ["09:30", "10:40", "11:50", "13:00", "14:10", "15:20", "16:30", "17:40", "18:50", "20:00"] as const;
+export const slotTimes = [...baseSlotTimes, "21:10"] as const;
 
 const jpDate = new Intl.DateTimeFormat("ja-JP", {
   timeZone: "Asia/Tokyo",
@@ -56,7 +58,7 @@ export function createMonthWindow(monthKey?: string | null): MonthWindow {
 export function createAvailabilityDays(
   busyRanges: BusyRange[],
   monthWindow: MonthWindow,
-  options: { canUseCalendar: boolean; shiftLookup: ShiftLookup },
+  options: { canUseCalendar: boolean; shiftLookup: ShiftLookup; store: Store },
 ): AvailabilityDay[] {
   const startDate = getVisibleStartDate(monthWindow);
 
@@ -75,7 +77,7 @@ export function createAvailabilityDays(
       return null;
     }
 
-    const slots = createSlotsForDate(date, busyRanges, options.canUseCalendar, options.shiftLookup);
+    const slots = createSlotsForDate(date, busyRanges, options.canUseCalendar, options.shiftLookup, options.store);
 
     return {
       date: dateKey,
@@ -93,15 +95,20 @@ export function getFreeBusyWindow(monthWindow: MonthWindow) {
   };
 }
 
+export function getSlotTimesForStore(store: Pick<Store, "extraSlotTimes">) {
+  return store.extraSlotTimes?.length ? [...baseSlotTimes, ...store.extraSlotTimes] : [...baseSlotTimes];
+}
+
 function createSlotsForDate(
   date: Date,
   busyRanges: BusyRange[],
   canUseCalendar: boolean,
   shiftLookup: ShiftLookup,
+  store: Store,
 ): AvailabilitySlot[] {
   const dateKey = toDateKey(date);
 
-  return slotTimes.map((time) => {
+  return getSlotTimesForStore(store).map((time) => {
     const startsAt = new Date(`${dateKey}T${time}:00+09:00`);
     const endsAt = new Date(startsAt);
     endsAt.setMinutes(startsAt.getMinutes() + slotMinutes);

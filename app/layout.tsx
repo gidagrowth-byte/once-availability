@@ -9,13 +9,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
   title: sharedTitle,
   description: sharedDescription,
-  alternates: {
-    canonical: appUrl,
-  },
   openGraph: {
     title: sharedTitle,
     description: sharedDescription,
-    url: appUrl,
     siteName: "スタジオONCE",
     locale: "ja_JP",
     type: "website",

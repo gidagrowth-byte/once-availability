@@ -13,11 +13,13 @@ type AvailabilityCalendarProps = {
 type LineNavigationMode = "anchor" | "location.href";
 
 const LINE_NAVIGATION_MODE: LineNavigationMode = "anchor";
+const ageGroupOptions = ["20代以下", "30代", "40代", "50代", "60代以上"] as const;
 
 export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps) {
   const [selectedSlots, setSelectedSlots] = useState<AvailabilitySlot[]>([]);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerAgeGroup, setCustomerAgeGroup] = useState("");
   const [lineConfirmation, setLineConfirmation] = useState<LineConfirmation | null>(null);
   const [selectedDate, setSelectedDate] = useState(getInitialMobileStartDate(initialData.days));
   const [monthKey, setMonthKey] = useState(initialData.month.key);
@@ -52,6 +54,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
       store_id: data.store.id,
       date: getSlotDate(slot),
       time: slot.label,
+      age_group: customerAgeGroup || undefined,
     });
   }
 
@@ -80,6 +83,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
       store_name: data.store.name,
       selected_count: selectedSlots.length,
       selected_slots: selectedSlots.map((slot) => slot.dateLabel).join(", "),
+      age_group: customerAgeGroup,
     });
 
     setLineConfirmation({
@@ -105,6 +109,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
       store_name: data.store.name,
       selected_count: selectedSlots.length,
       selected_slots: selectedSlots.map((slot) => slot.dateLabel).join(", "),
+      age_group: customerAgeGroup,
     });
 
     trackEvent("line_send_click", {
@@ -112,6 +117,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
       store_name: data.store.name,
       selected_count: selectedSlots.length,
       selected_slots: selectedSlots.map((slot) => slot.dateLabel).join(", "),
+      age_group: customerAgeGroup,
     });
 
     if (LINE_NAVIGATION_MODE === "location.href") {
@@ -146,7 +152,8 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
   const previousAvailableMonthKey = activeMonthIndex > 0 ? availableMonths[activeMonthIndex - 1] : null;
   const nextAvailableMonthKey =
     activeMonthIndex >= 0 && activeMonthIndex < availableMonths.length - 1 ? availableMonths[activeMonthIndex + 1] : null;
-  const isCustomerInfoComplete = customerName.trim().length > 0 && customerPhone.trim().length > 0;
+  const isCustomerInfoComplete =
+    customerName.trim().length > 0 && customerPhone.trim().length > 0 && customerAgeGroup.trim().length > 0;
   const currentStep = getCurrentStep(selectedSlots.length, isCustomerInfoComplete);
 
   function handleMonthChange(nextMonthKey: string | null) {
@@ -191,8 +198,9 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
       store_name: data.store.name,
       selected_month: data.month.key,
       selected_count: selectedSlots.length,
+      age_group: customerAgeGroup || undefined,
     });
-  }, [currentStep, data.store.id, data.store.name, data.month.key, selectedSlots.length]);
+  }, [currentStep, customerAgeGroup, data.store.id, data.store.name, data.month.key, selectedSlots.length]);
 
   useEffect(() => {
     const mobileInitialScope = `${data.store.id}__${data.month.key}`;
@@ -490,10 +498,12 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
         selectedSlots={selectedSlots}
         customerName={customerName}
         customerPhone={customerPhone}
+        customerAgeGroup={customerAgeGroup}
         lineOaId={data.store.lineOaId}
         storeName={data.store.name}
         onCustomerNameChange={setCustomerName}
         onCustomerPhoneChange={setCustomerPhone}
+        onCustomerAgeGroupChange={setCustomerAgeGroup}
         onLineClick={handleLineClick}
       />
 
@@ -501,6 +511,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
         isOpen={lineConfirmation !== null}
         customerName={customerName.trim()}
         customerPhone={customerPhone.trim()}
+        customerAgeGroup={customerAgeGroup.trim()}
         selectedSlots={selectedSlots}
         onClose={() => setLineConfirmation(null)}
         onSubmit={handleConfirmSubmit}
@@ -734,6 +745,7 @@ type LineConfirmModalProps = {
   isOpen: boolean;
   customerName: string;
   customerPhone: string;
+  customerAgeGroup: string;
   selectedSlots: AvailabilitySlot[];
   onClose: () => void;
   onSubmit: () => void;
@@ -743,6 +755,7 @@ function LineConfirmModal({
   isOpen,
   customerName,
   customerPhone,
+  customerAgeGroup,
   selectedSlots,
   onClose,
   onSubmit,
@@ -801,7 +814,7 @@ function LineConfirmModal({
         </div>
 
         <div className="mt-4 space-y-4 rounded-md border border-slate-200 bg-slate-50 p-4">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-3">
             <div>
               <p className="text-xs font-bold text-slate-500">お名前</p>
               <p className="mt-1 min-h-6 text-base font-bold text-ink">{customerName || "未入力"}</p>
@@ -809,6 +822,10 @@ function LineConfirmModal({
             <div>
               <p className="text-xs font-bold text-slate-500">電話番号</p>
               <p className="mt-1 min-h-6 text-base font-bold text-ink">{customerPhone || "未入力"}</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-500">年代</p>
+              <p className="mt-1 min-h-6 text-base font-bold text-ink">{customerAgeGroup || "未選択"}</p>
             </div>
           </div>
 
@@ -854,10 +871,12 @@ type LineFixedBarProps = {
   selectedSlots: AvailabilitySlot[];
   customerName: string;
   customerPhone: string;
+  customerAgeGroup: string;
   lineOaId: string;
   storeName: string;
   onCustomerNameChange: (value: string) => void;
   onCustomerPhoneChange: (value: string) => void;
+  onCustomerAgeGroupChange: (value: string) => void;
   onLineClick: (generatedMessage: string, destinationUrl: string) => void;
 };
 
@@ -865,21 +884,31 @@ function LineFixedBar({
   selectedSlots,
   customerName,
   customerPhone,
+  customerAgeGroup,
   lineOaId,
   storeName,
   onCustomerNameChange,
   onCustomerPhoneChange,
+  onCustomerAgeGroupChange,
   onLineClick,
 }: LineFixedBarProps) {
   const trimmedCustomerName = customerName.trim();
   const trimmedCustomerPhone = customerPhone.trim();
+  const trimmedCustomerAgeGroup = customerAgeGroup.trim();
   const selectedCount = selectedSlots.length;
-  const isCustomerInfoComplete = trimmedCustomerName.length > 0 && trimmedCustomerPhone.length > 0;
+  const isCustomerInfoComplete =
+    trimmedCustomerName.length > 0 && trimmedCustomerPhone.length > 0 && trimmedCustomerAgeGroup.length > 0;
   const canSubmit = selectedCount > 0 && isCustomerInfoComplete;
   const ctaLabel = getLineCtaLabel(selectedCount);
   const ctaSubText = getLineCtaSubText(selectedCount);
   const formGuideText = selectedCount > 0 && !isCustomerInfoComplete ? getFormGuideText(selectedCount) : "";
-  const generatedMessage = createLineMessage(storeName, selectedSlots, trimmedCustomerName, trimmedCustomerPhone);
+  const generatedMessage = createLineMessage(
+    storeName,
+    selectedSlots,
+    trimmedCustomerName,
+    trimmedCustomerPhone,
+    trimmedCustomerAgeGroup,
+  );
   const destinationUrl = createLineUrl(lineOaId, generatedMessage);
 
   return (
@@ -893,7 +922,7 @@ function LineFixedBar({
               </p>
             ) : null}
 
-            <div className="grid gap-1.5 sm:grid-cols-2 sm:gap-3">
+            <div className="grid gap-1.5 sm:grid-cols-3 sm:gap-3">
               <label className="block">
                 <span className="mb-px block text-[10px] font-bold leading-4 text-slate-500 sm:mb-1 sm:text-xs">お名前</span>
                 <input
@@ -915,6 +944,22 @@ function LineFixedBar({
                   pattern="[0-9-]*"
                   autoComplete="tel"
                 />
+              </label>
+              <label className="block">
+                <span className="mb-px block text-[10px] font-bold leading-4 text-slate-500 sm:mb-1 sm:text-xs">年代（必須）</span>
+                <select
+                  value={customerAgeGroup}
+                  onChange={(event) => onCustomerAgeGroupChange(event.target.value)}
+                  className="min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-base font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100 sm:h-11"
+                  aria-label="年代を選択"
+                >
+                  <option value="">選択してください</option>
+                  {ageGroupOptions.map((ageGroup) => (
+                    <option key={ageGroup} value={ageGroup}>
+                      {ageGroup}
+                    </option>
+                  ))}
+                </select>
               </label>
             </div>
 
@@ -999,6 +1044,7 @@ function createLineMessage(
   selectedSlots: AvailabilitySlot[],
   customerName: string,
   customerPhone: string,
+  customerAgeGroup: string,
 ) {
   const requestLines = selectedSlots.map((slot, index) => `第${index + 1}希望：${slot.dateLabel}〜`);
 
@@ -1011,6 +1057,7 @@ function createLineMessage(
     "",
     `お名前：${customerName}`,
     `電話番号：${customerPhone}`,
+    `年代：${customerAgeGroup}`,
     "",
     ...requestLines,
     "",
@@ -1044,14 +1091,14 @@ function getLineCtaSubText(selectedCount: number) {
 
 function getFormGuideText(selectedCount: number) {
   if (selectedCount === 1) {
-    return "あと2件まで選択できます。\nお名前と電話番号をご記載ください。";
+    return "あと2件まで選択できます。\nお名前・電話番号・年代をご入力ください。";
   }
 
   if (selectedCount === 2) {
-    return "あと1件まで選択できます。\nお名前と電話番号をご記載ください。";
+    return "あと1件まで選択できます。\nお名前・電話番号・年代をご入力ください。";
   }
 
-  return "お名前と電話番号をご記載ください。";
+  return "お名前・電話番号・年代をご入力ください。";
 }
 
 function getConfirmationSelectionGuide(selectedCount: number) {

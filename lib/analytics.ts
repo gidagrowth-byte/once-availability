@@ -137,15 +137,18 @@ function getClarityTags(eventName: string, params: Record<string, unknown>) {
       store_id: params.store_id,
       selected_date: params.date,
       selected_time: params.time,
+      age_group: params.age_group,
     });
   }
 
-  if (eventName === "line_send_click") {
+  if (eventName === "confirm_modal_open" || eventName === "confirm_submit" || eventName === "line_send_click") {
     return pickDefined({
       event: eventName,
       last_event: eventName,
       store_id: params.store_id,
       selected_slots: params.selected_slots,
+      selected_count: params.selected_count,
+      age_group: params.age_group,
     });
   }
 
@@ -155,6 +158,7 @@ function getClarityTags(eventName: string, params: Record<string, unknown>) {
       last_event: eventName,
       store_id: params.store_id,
       selected_count: params.selected_count,
+      age_group: params.age_group,
     });
   }
 

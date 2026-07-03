@@ -26,21 +26,32 @@ export default async function EmbedPage({ searchParams }: EmbedProps) {
     }
   }
 
-  const days = getNearestThreeDays(dataSets.flatMap((data) => data.days));
+  const days = getUniqueSortedDays(dataSets.flatMap((data) => data.days));
+  const lastUpdatedAt = getLatestUpdatedAt(dataSets);
 
   return (
-    <main className="min-h-screen bg-white">
-      <EmbedAvailability storeName={firstData.store.name} days={days} />
+    <main className="min-h-screen bg-slate-50 p-2">
+      <EmbedAvailability
+        storeName={firstData.store.name}
+        storeArea={firstData.store.area}
+        days={days}
+        lastUpdatedAt={lastUpdatedAt}
+      />
     </main>
   );
 }
 
-function getNearestThreeDays(days: AvailabilityDay[]) {
-  const uniqueDays = Array.from(new Map(days.map((day) => [day.date, day])).values()).sort((a, b) =>
+function getUniqueSortedDays(days: AvailabilityDay[]) {
+  return Array.from(new Map(days.map((day) => [day.date, day])).values()).sort((a, b) =>
     a.date.localeCompare(b.date),
   );
-  const firstAvailableIndex = uniqueDays.findIndex((day) => day.slots.some((slot) => slot.status === "available"));
-  const startIndex = firstAvailableIndex >= 0 ? firstAvailableIndex : 0;
+}
 
-  return uniqueDays.slice(startIndex, startIndex + 3);
+function getLatestUpdatedAt(dataSets: Array<Awaited<ReturnType<typeof getCachedAvailability>>>) {
+  const timestamps = dataSets
+    .map((data) => data.diagnostics.cachedAt ?? data.diagnostics.fetchedAt)
+    .filter((value): value is string => Boolean(value))
+    .sort();
+
+  return timestamps[timestamps.length - 1] ?? null;
 }

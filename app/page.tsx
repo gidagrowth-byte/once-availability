@@ -1,5 +1,9 @@
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
+import { HpReservationForm } from "@/components/HpReservationForm";
 import { getCachedAvailability } from "@/lib/availabilityCache";
+import { getHpReservationAvailability } from "@/lib/hpReservationAvailability";
+import { resolveHpStoreId } from "@/lib/hpStoreAliases";
+import { stores } from "@/lib/stores";
 
 export const dynamic = "force-dynamic";
 
@@ -8,11 +12,37 @@ type HomeProps = {
     store?: string;
     selectedMonth?: string;
     month?: string;
+    mode?: string;
   }>;
 };
 
 export default async function Home({ searchParams }: HomeProps) {
   const resolvedSearchParams = await searchParams;
+
+  // Impact note: mode=form is a new HP-only branch. Existing LINE reservation URLs
+  // such as /?store=xxx and mode-less access continue through the original
+  // AvailabilityCalendar path below without changing its component or behavior.
+  if (resolvedSearchParams?.mode === "form") {
+    const formData = await getHpReservationAvailability(resolvedSearchParams.store);
+    const resolvedStoreId = resolveHpStoreId(resolvedSearchParams.store) ?? formData.store.id;
+
+    return (
+      <main className="min-h-screen bg-slate-50">
+        <HpReservationForm
+          storeId={formData.store.id}
+          storeName={formData.store.name}
+          storeArea={formData.store.area}
+          stores={stores.map((store) => ({
+            id: store.id,
+            name: store.name,
+          }))}
+          days={formData.days}
+          key={resolvedStoreId}
+        />
+      </main>
+    );
+  }
+
   const requestedMonth = resolvedSearchParams?.selectedMonth ?? resolvedSearchParams?.month;
   let initialData = await getCachedAvailability(
     requestedMonth,

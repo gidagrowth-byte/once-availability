@@ -1,5 +1,6 @@
 import { EmbedAvailability } from "@/components/EmbedAvailability";
 import { getCachedAvailability } from "@/lib/availabilityCache";
+import { stores } from "@/lib/stores";
 import type { AvailabilityDay } from "@/types/availability";
 
 export const dynamic = "force-dynamic";
@@ -32,8 +33,13 @@ export default async function EmbedPage({ searchParams }: EmbedProps) {
   return (
     <main className="min-h-screen bg-slate-50 p-2">
       <EmbedAvailability
+        storeId={firstData.store.id}
         storeName={firstData.store.name}
         storeArea={firstData.store.area}
+        stores={stores.map((store) => ({
+          id: store.id,
+          name: store.name,
+        }))}
         days={days}
         lastUpdatedAt={lastUpdatedAt}
       />

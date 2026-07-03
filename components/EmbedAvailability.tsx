@@ -4,15 +4,20 @@ import { useMemo, useState } from "react";
 import type { AvailabilityDay } from "@/types/availability";
 
 type EmbedAvailabilityProps = {
+  storeId: string;
   storeName: string;
   storeArea: string;
+  stores: Array<{
+    id: string;
+    name: string;
+  }>;
   days: AvailabilityDay[];
   lastUpdatedAt: string | null;
 };
 
 const displayTimeRows = ["09:30", "10:40", "11:50", "13:00", "14:10", "15:20", "16:30", "17:40", "18:50", "20:00", "21:10"];
 
-export function EmbedAvailability({ storeName, storeArea, days, lastUpdatedAt }: EmbedAvailabilityProps) {
+export function EmbedAvailability({ storeId, storeName, storeArea, stores, days, lastUpdatedAt }: EmbedAvailabilityProps) {
   const initialStartIndex = useMemo(() => getInitialStartIndex(days), [days]);
   const [startIndex, setStartIndex] = useState(initialStartIndex);
   const visibleDays = days.slice(startIndex, startIndex + 3);
@@ -29,11 +34,32 @@ export function EmbedAvailability({ storeName, storeArea, days, lastUpdatedAt }:
     });
   }
 
+  function handleStoreChange(nextStoreId: string) {
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set("store", nextStoreId);
+    window.location.href = `${nextUrl.pathname}${nextUrl.search}`;
+  }
+
   return (
     <section className="w-full overflow-hidden rounded-md border border-slate-200 bg-white text-slate-800 shadow-soft">
       <div className="border-b border-slate-100 px-3 py-3">
-        <p className="truncate text-base font-bold leading-6 text-ink">{storeName}</p>
-        <p className="mt-0.5 truncate text-xs font-semibold text-leaf">{storeArea}</p>
+        <label className="block">
+          <span className="sr-only">店舗を選択</span>
+          <select
+            value={storeId}
+            onChange={(event) => handleStoreChange(event.target.value)}
+            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-base font-bold text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-emerald-100"
+            aria-label="店舗を選択"
+          >
+            {stores.map((store) => (
+              <option key={store.id} value={store.id}>
+                {store.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="mt-2 truncate text-xs font-semibold text-leaf">{storeArea}</p>
+        <p className="sr-only">{storeName}</p>
       </div>
 
       {days.length === 0 ? (

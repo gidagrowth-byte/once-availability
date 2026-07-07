@@ -13,7 +13,7 @@ type AvailabilityCalendarProps = {
 type LineNavigationMode = "anchor" | "location.href";
 
 const LINE_NAVIGATION_MODE: LineNavigationMode = "anchor";
-const ageGroupOptions = ["20代", "10代（18歳未満は不可）", "30代", "40代", "50代", "60代以上"] as const;
+const ageGroupOptions = ["10代（18歳未満は不可）", "20代", "30代", "40代", "50代", "60代以上"] as const;
 
 export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps) {
   const [selectedSlots, setSelectedSlots] = useState<AvailabilitySlot[]>([]);

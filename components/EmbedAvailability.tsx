@@ -64,13 +64,14 @@ export function EmbedAvailability({ storeId, storeName, storeArea, stores, days,
         </label>
         <p className="mt-2 truncate text-xs font-semibold text-leaf">{storeArea}</p>
         <p className="sr-only">{storeName}</p>
+        <NearbyStoreCard className="md:hidden" nearbyStore={nearbyStore} />
       </div>
 
       {days.length === 0 ? (
         <div className="px-3 py-6 text-center">
           <p className="text-sm font-bold text-ink">空き状況</p>
           <p className="mt-2 text-xs font-bold text-slate-500">表示できる日付がありません。</p>
-          <NearbyStoreCard nearbyStore={nearbyStore} />
+          <NearbyStoreCard className="hidden md:block" nearbyStore={nearbyStore} />
         </div>
       ) : (
         <>
@@ -116,7 +117,7 @@ export function EmbedAvailability({ storeId, storeName, storeArea, stores, days,
               </button>
             </div>
 
-            <NearbyStoreCard nearbyStore={nearbyStore} />
+            <NearbyStoreCard className="hidden md:block" nearbyStore={nearbyStore} />
           </div>
 
           {!hasAnyAvailableSlot ? (
@@ -189,13 +190,19 @@ export function EmbedAvailability({ storeId, storeName, storeArea, stores, days,
   );
 }
 
-function NearbyStoreCard({ nearbyStore }: { nearbyStore: EmbedAvailabilityProps["nearbyStore"] }) {
+function NearbyStoreCard({
+  className = "",
+  nearbyStore,
+}: {
+  className?: string;
+  nearbyStore: EmbedAvailabilityProps["nearbyStore"];
+}) {
   if (!nearbyStore) {
     return null;
   }
 
   return (
-    <div className="mt-3 rounded-md border border-emerald-100 bg-emerald-50/80 p-3 text-left">
+    <div className={`mt-3 rounded-md border border-emerald-100 bg-emerald-50/80 p-3 text-left ${className}`}>
       <p className="text-sm font-bold text-ink">希望の時間が見つからない方へ</p>
       <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-600">
         近隣店舗の空き枠も確認できます

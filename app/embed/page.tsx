@@ -29,6 +29,8 @@ export default async function EmbedPage({ searchParams }: EmbedProps) {
 
   const days = getUniqueSortedDays(dataSets.flatMap((data) => data.days));
   const lastUpdatedAt = getLatestUpdatedAt(dataSets);
+  const currentStore = stores.find((store) => store.id === firstData.store.id);
+  const nearbyStore = stores.find((store) => store.id === currentStore?.nearbyStoreId);
 
   return (
     <main className="min-h-screen bg-slate-50 p-2">
@@ -42,6 +44,14 @@ export default async function EmbedPage({ searchParams }: EmbedProps) {
         }))}
         days={days}
         lastUpdatedAt={lastUpdatedAt}
+        nearbyStore={
+          nearbyStore
+            ? {
+                id: nearbyStore.id,
+                name: nearbyStore.name,
+              }
+            : null
+        }
       />
     </main>
   );

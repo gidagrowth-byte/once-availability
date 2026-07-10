@@ -13,11 +13,15 @@ type EmbedAvailabilityProps = {
   }>;
   days: AvailabilityDay[];
   lastUpdatedAt: string | null;
+  nearbyStore: {
+    id: string;
+    name: string;
+  } | null;
 };
 
 const displayTimeRows = ["09:30", "10:40", "11:50", "13:00", "14:10", "15:20", "16:30", "17:40", "18:50", "20:00", "21:10"];
 
-export function EmbedAvailability({ storeId, storeName, storeArea, stores, days, lastUpdatedAt }: EmbedAvailabilityProps) {
+export function EmbedAvailability({ storeId, storeName, storeArea, stores, days, lastUpdatedAt, nearbyStore }: EmbedAvailabilityProps) {
   const initialStartIndex = useMemo(() => getInitialStartIndex(days), [days]);
   const [startIndex, setStartIndex] = useState(initialStartIndex);
   const visibleDays = days.slice(startIndex, startIndex + 3);
@@ -176,6 +180,21 @@ export function EmbedAvailability({ storeId, storeName, storeArea, stores, days,
               </tbody>
             </table>
           </div>
+
+          {nearbyStore ? (
+            <div className="mx-3 mb-3 rounded-md border border-emerald-100 bg-emerald-50/80 p-3">
+              <p className="text-sm font-bold text-ink">希望の時間が見つからない方へ</p>
+              <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-600">
+                近隣店舗の空き枠も確認できます
+              </p>
+              <a
+                href={`/embed?store=${nearbyStore.id}`}
+                className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-leaf px-4 py-2.5 text-center text-sm font-bold text-white shadow-sm transition active:scale-[0.99]"
+              >
+                {nearbyStore.name}の空き枠を見る
+              </a>
+            </div>
+          ) : null}
         </>
       )}
     </section>

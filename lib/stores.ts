@@ -7,6 +7,7 @@ export type Store = {
   keywords: readonly string[];
   shiftSheetName?: string;
   extraSlotTimes?: readonly string[];
+  nearbyStoreId: string | null;
   lineUrl: string;
   lineOaId: string;
   area: string;
@@ -22,6 +23,7 @@ export const stores = [
     name: "川崎店",
     type: "direct",
     keywords: ["川崎店"],
+    nearbyStoreId: null,
     lineUrl: "",
     lineOaId: "@340xeyzq",
     area: "川崎",
@@ -34,6 +36,7 @@ export const stores = [
     type: "direct",
     keywords: ["千歳烏山店"],
     shiftSheetName: "chitosekarasuyama",
+    nearbyStoreId: null,
     lineUrl: "",
     lineOaId: "@362yvuor",
     area: "世田谷区・千歳烏山",
@@ -45,6 +48,7 @@ export const stores = [
     name: "江戸川橋・神楽坂店",
     type: "direct",
     keywords: ["江戸川橋・神楽坂店"],
+    nearbyStoreId: "edogawabashi-gokokuji",
     lineUrl: "",
     lineOaId: "@872mltsa",
     area: "文京区・江戸川橋 / 神楽坂",
@@ -56,6 +60,7 @@ export const stores = [
     name: "江戸川橋・護国寺店",
     type: "direct",
     keywords: ["江戸川橋・護国寺店", "護国寺店(音羽)"],
+    nearbyStoreId: "edogawabashi-kagurazaka",
     lineUrl: "https://lin.ee/sU6HrTW",
     lineOaId: "@509ldntt",
     area: "文京区・江戸川橋 / 護国寺",
@@ -69,6 +74,7 @@ export const stores = [
     keywords: ["清澄白河店"],
     shiftSheetName: "kiyosumishirakawa",
     extraSlotTimes: ["21:10"],
+    nearbyStoreId: null,
     lineUrl: "",
     lineOaId: "@080fklpc",
     area: "江東区・清澄白河",
@@ -81,6 +87,7 @@ export const stores = [
     type: "fc",
     keywords: ["住吉・菊川店"],
     extraSlotTimes: ["21:10"],
+    nearbyStoreId: null,
     lineUrl: "",
     lineOaId: "@340hcwpv",
     area: "江東区・住吉 / 菊川",

@@ -35,6 +35,8 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
     onSelectedSlotsChange: setSelectedSlots,
   });
   const timeRows = getTimeRows(data.days);
+  const currentStore = stores.find((store) => store.id === data.store.id);
+  const nearbyStore = stores.find((store) => store.id === currentStore?.nearbyStoreId);
 
   function handleSlotClick(slot: AvailabilitySlot) {
     setSelectedSlots((currentSlots) => {
@@ -222,6 +224,7 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
           </select>
         </label>
         <p className="mt-2 truncate text-xs font-semibold text-leaf md:text-sm">{data.store.area}</p>
+        <MobileNearbyStoreCard nearbyStore={nearbyStore} />
         <h1 className="mt-2 hidden text-2xl font-bold tracking-normal text-ink md:block">
           {data.store.name}
         </h1>
@@ -381,6 +384,37 @@ type LineConfirmation = {
 };
 
 const displayTimeRows = ["09:30", "10:40", "11:50", "13:00", "14:10", "15:20", "16:30", "17:40", "18:50", "20:00", "21:10"];
+
+function MobileNearbyStoreCard({
+  nearbyStore,
+}: {
+  nearbyStore:
+    | {
+        id: string;
+        name: string;
+      }
+    | null
+    | undefined;
+}) {
+  if (!nearbyStore) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3 rounded-md border border-emerald-100 bg-emerald-50/80 p-3 md:hidden">
+      <p className="text-sm font-bold text-ink">希望の時間が見つからない方へ</p>
+      <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-600">
+        近隣店舗の空き枠も確認できます
+      </p>
+      <a
+        href={`/?store=${nearbyStore.id}`}
+        className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-leaf px-4 py-2.5 text-center text-sm font-bold text-white shadow-sm transition active:scale-[0.99]"
+      >
+        {nearbyStore.name}の空き枠を見る
+      </a>
+    </div>
+  );
+}
 
 function getTimeRows(days: AvailabilityResponse["days"]) {
   const slotLabels = new Set(days.flatMap((day) => day.slots.map((slot) => slot.label)));

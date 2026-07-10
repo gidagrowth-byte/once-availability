@@ -70,6 +70,7 @@ export function EmbedAvailability({ storeId, storeName, storeArea, stores, days,
         <div className="px-3 py-6 text-center">
           <p className="text-sm font-bold text-ink">空き状況</p>
           <p className="mt-2 text-xs font-bold text-slate-500">表示できる日付がありません。</p>
+          <NearbyStoreCard nearbyStore={nearbyStore} />
         </div>
       ) : (
         <>
@@ -114,6 +115,8 @@ export function EmbedAvailability({ storeId, storeName, storeArea, stores, days,
                 ＞
               </button>
             </div>
+
+            <NearbyStoreCard nearbyStore={nearbyStore} />
           </div>
 
           {!hasAnyAvailableSlot ? (
@@ -180,24 +183,30 @@ export function EmbedAvailability({ storeId, storeName, storeArea, stores, days,
               </tbody>
             </table>
           </div>
-
-          {nearbyStore ? (
-            <div className="mx-3 mb-3 rounded-md border border-emerald-100 bg-emerald-50/80 p-3">
-              <p className="text-sm font-bold text-ink">希望の時間が見つからない方へ</p>
-              <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-600">
-                近隣店舗の空き枠も確認できます
-              </p>
-              <a
-                href={`/embed?store=${nearbyStore.id}`}
-                className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-leaf px-4 py-2.5 text-center text-sm font-bold text-white shadow-sm transition active:scale-[0.99]"
-              >
-                {nearbyStore.name}の空き枠を見る
-              </a>
-            </div>
-          ) : null}
         </>
       )}
     </section>
+  );
+}
+
+function NearbyStoreCard({ nearbyStore }: { nearbyStore: EmbedAvailabilityProps["nearbyStore"] }) {
+  if (!nearbyStore) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3 rounded-md border border-emerald-100 bg-emerald-50/80 p-3 text-left">
+      <p className="text-sm font-bold text-ink">希望の時間が見つからない方へ</p>
+      <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-600">
+        近隣店舗の空き枠も確認できます
+      </p>
+      <a
+        href={`/embed?store=${nearbyStore.id}`}
+        className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-leaf px-4 py-2.5 text-center text-sm font-bold text-white shadow-sm transition active:scale-[0.99]"
+      >
+        {nearbyStore.name}の空き枠を見る
+      </a>
+    </div>
   );
 }
 

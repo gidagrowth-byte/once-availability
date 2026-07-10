@@ -65,14 +65,6 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
 
     const href = destinationUrl;
 
-    console.log({
-      storeId: data.store.id,
-      storeName: data.store.name,
-      lineOaId: data.store.lineOaId,
-      generatedMessage,
-      lineUrl: href,
-    });
-
     if (!data.store.lineOaId) {
       alert("この店舗のLINE設定が未完了です");
       return;
@@ -96,13 +88,6 @@ export function AvailabilityCalendar({ initialData }: AvailabilityCalendarProps)
     if (!lineConfirmation) {
       return;
     }
-
-    console.log({
-      userAgent: window.navigator.userAgent,
-      href: lineConfirmation.destinationUrl,
-      currentUrl: window.location.href,
-      selectedSlots,
-    });
 
     trackEvent("confirm_submit", {
       store_id: data.store.id,

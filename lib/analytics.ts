@@ -43,7 +43,6 @@ function queueOrSendClarityEvent(eventName: string, params: Record<string, unkno
   }
 
   clarityQueue.push({ eventName, params });
-  console.log("clarity event queued", { eventName, queueSize: clarityQueue.length });
   startClarityFlushInterval();
 }
 
@@ -61,7 +60,6 @@ function startClarityFlushInterval() {
     }
 
     if (Date.now() - clarityFlushStartedAt >= clarityMaxWaitMs) {
-      console.log("clarity event queue expired", { queueSize: clarityQueue.length });
       clarityQueue.length = 0;
       stopClarityFlushInterval();
     }
@@ -83,8 +81,6 @@ function flushClarityQueue() {
   for (const clarityEvent of queuedEvents) {
     sendClarityEvent(clarityEvent);
   }
-
-  console.log("clarity event queue flushed", { flushedCount: queuedEvents.length });
 }
 
 function sendClarityEvent({ eventName, params }: ClarityEvent) {
@@ -105,8 +101,6 @@ function sendClarityEvent({ eventName, params }: ClarityEvent) {
   for (const [key, value] of Object.entries(tags)) {
     clarity("set", key, String(value));
   }
-
-  console.log("clarity event sent", { eventName, tags });
 }
 
 function isClarityReady() {

@@ -188,15 +188,7 @@ export async function fetchGoogleCalendarBusyRanges(monthWindow: MonthWindow, st
 
 function isTargetStoreEvent(event: GoogleCalendarEvent, store: Store) {
   const location = event.location ?? "";
-  const isTargetStore = store.keywords.some((keyword) => location.includes(keyword));
-
-  console.log({
-    summary: event.summary,
-    location: event.location,
-    matched: isTargetStore,
-  });
-
-  return isTargetStore;
+  return store.keywords.some((keyword) => location.includes(keyword));
 }
 
 function dedupeBusyRanges(ranges: BusyRange[]) {
